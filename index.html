@@ -148,7 +148,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/03/23/well-known/">
+    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/03/30/docker-learn-command/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -162,64 +162,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2021/03/23/well-known/" class="post-title-link" itemprop="url">.well-known</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2021-03-23 16:45:37" itemprop="dateCreated datePublished" datetime="2021-03-23T16:45:37+08:00">2021-03-23</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/03/23/test01/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Joey Liao">
-      <meta itemprop="description" content="滾">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="JL 蝦七八筆記">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2021/03/23/test01/" class="post-title-link" itemprop="url">test01</a>
+            <a href="/2021/03/30/docker-learn-command/" class="post-title-link" itemprop="url">Docker筆記-基本指令</a>
         </h2>
 
         <div class="post-meta">
@@ -230,7 +173,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2021-03-23 11:26:09 / Modified: 11:26:57" itemprop="dateCreated datePublished" datetime="2021-03-23T11:26:09+08:00">2021-03-23</time>
+              <time title="Created: 2021-03-30 15:58:00 / Modified: 17:20:52" itemprop="dateCreated datePublished" datetime="2021-03-30T15:58:00+08:00">2021-03-30</time>
             </span>
 
           
@@ -244,7 +187,31 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          
+          <h1 id="Docker-筆記-基本指令（常用指令）"><a href="#Docker-筆記-基本指令（常用指令）" class="headerlink" title="Docker 筆記 - 基本指令（常用指令）"></a>Docker 筆記 - 基本指令（常用指令）</h1><blockquote>
+<h2 id="Docker基本觀念"><a href="#Docker基本觀念" class="headerlink" title="Docker基本觀念"></a>Docker基本觀念</h2><ul>
+<li>Image 映像黨：Docker使用的Image是唯讀的，Image執行（instance)產生Container</li>
+<li>Container 容器：run、start、stop、rm，每個 Container 都是獨立分離的。Image 是唯讀的，所以 Container 啟動時，會在上面建立一層可以寫入的層級。(最多寫入127層)</li>
+<li>Registry 倉庫（Public/Private）：<a target="_blank" rel="noopener" href="https://hub.docker.com/">https://hub.docker.com/</a> # Image 預設都由此處抓取</li>
+</ul>
+<ol>
+<li>由 Registry 抓取 Image 到 Local 端，可以把 Image 想成是作業系統的 IMG、ISO 檔</li>
+<li>啟動此作業系統(Image) 會產生 Container (實體化)<blockquote>
+<ul>
+<li>註1：一個 Image 可以產生、執行出多組 Container (同一個 VM 可以多重執行，執行當下會產生 Container，Container 上面會有自己寫入的 aufs 層級)</li>
+<li>註2：可以想像 Container 就是 Image 上面的一層 Layer</li>
+</ul>
+</blockquote>
+</li>
+</ol>
+</blockquote>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/03/30/docker-learn-command/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -395,7 +362,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">2</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

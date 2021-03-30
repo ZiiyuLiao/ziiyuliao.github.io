@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"ziiyuliao.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Docker 筆記 - 基本指令（常用指令） Docker基本觀念 Image 映像黨：Docker使用的Image是唯讀的，Image執行（instance)產生Container Container 容器：run、start、stop、rm，每個 Container 都是獨立分離的。Image 是唯讀的，所以 Container 啟動時，會在上面建立一層可以寫入的層級。(最多寫入127層) R">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Docker筆記-基本指令">
+<meta property="og:url" content="http://ziiyuliao.github.io/2021/03/30/docker-learn-command/index.html">
+<meta property="og:site_name" content="JL 蝦七八筆記">
+<meta property="og:description" content="Docker 筆記 - 基本指令（常用指令） Docker基本觀念 Image 映像黨：Docker使用的Image是唯讀的，Image執行（instance)產生Container Container 容器：run、start、stop、rm，每個 Container 都是獨立分離的。Image 是唯讀的，所以 Container 啟動時，會在上面建立一層可以寫入的層級。(最多寫入127層) R">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2021-03-30T07:58:00.000Z">
+<meta property="article:modified_time" content="2021-03-30T09:20:52.464Z">
+<meta property="article:author" content="Joey Liao">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://ziiyuliao.github.io/2021/03/30/docker-learn-command/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-tw'
+  };
+</script>
+
+  <title>Docker筆記-基本指令 | JL 蝦七八筆記</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">JL 蝦七八筆記</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">蝦記</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/03/30/docker-learn-command/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Joey Liao">
+      <meta itemprop="description" content="滾">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JL 蝦七八筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Docker筆記-基本指令
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-03-30 15:58:00 / Modified: 17:20:52" itemprop="dateCreated datePublished" datetime="2021-03-30T15:58:00+08:00">2021-03-30</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Docker-筆記-基本指令（常用指令）"><a href="#Docker-筆記-基本指令（常用指令）" class="headerlink" title="Docker 筆記 - 基本指令（常用指令）"></a>Docker 筆記 - 基本指令（常用指令）</h1><blockquote>
+<h2 id="Docker基本觀念"><a href="#Docker基本觀念" class="headerlink" title="Docker基本觀念"></a>Docker基本觀念</h2><ul>
+<li>Image 映像黨：Docker使用的Image是唯讀的，Image執行（instance)產生Container</li>
+<li>Container 容器：run、start、stop、rm，每個 Container 都是獨立分離的。Image 是唯讀的，所以 Container 啟動時，會在上面建立一層可以寫入的層級。(最多寫入127層)</li>
+<li>Registry 倉庫（Public/Private）：<a target="_blank" rel="noopener" href="https://hub.docker.com/">https://hub.docker.com/</a> # Image 預設都由此處抓取</li>
+</ul>
+<ol>
+<li>由 Registry 抓取 Image 到 Local 端，可以把 Image 想成是作業系統的 IMG、ISO 檔</li>
+<li>啟動此作業系統(Image) 會產生 Container (實體化)<blockquote>
+<ul>
+<li>註1：一個 Image 可以產生、執行出多組 Container (同一個 VM 可以多重執行，執行當下會產生 Container，Container 上面會有自己寫入的 aufs 層級)</li>
+<li>註2：可以想像 Container 就是 Image 上面的一層 Layer</li>
+</ul>
+</blockquote>
+</li>
+</ol>
+</blockquote>
+<span id="more"></span>
+<h2 id="Docker常用指令"><a href="#Docker常用指令" class="headerlink" title="Docker常用指令"></a>Docker常用指令</h2><p><em><strong>官方出版的Docker</strong></em></p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://hub.docker.com/explore/">Expore Offcial Repositories</a></li>
+<li>官方套件<a target="_blank" rel="noopener" href="https://docs.docker.com/docker-hub/official_repos/">Official repositories on Docker Hub - Docker</a></li>
+<li>MAC/Windows套件 <a target="_blank" rel="noopener" href="https://www.docker.com/products/docker-desktop">Docker desktop</a></li>
+</ul>
+<p><em><strong>Docker commands文件</strong></em></p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/engine/reference/commandline/">The Docker commands - Docker</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/engine/reference/commandline/cli/">Use the Docker Engine command-line</a><blockquote>
+<blockquote>
+<p>常用命令：<strong>run、exec、ps、rm、rmi、images</strong></p>
+</blockquote>
+</blockquote>
+</li>
+</ul>
+<h3 id="Docker-版本資訊"><a href="#Docker-版本資訊" class="headerlink" title="Docker 版本資訊"></a>Docker 版本資訊</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker version</span><br><span class="line">docker info</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-搜尋-Image"><a href="#Docker-搜尋-Image" class="headerlink" title="Docker 搜尋 Image"></a>Docker 搜尋 Image</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker search image-name</span><br><span class="line">docker search debian</span><br><span class="line">docker search nginx</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-抓取-Image"><a href="#Docker-抓取-Image" class="headerlink" title="Docker 抓取 Image"></a>Docker 抓取 Image</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker pull ubuntu <span class="comment"># 抓所有 ubuntu image 回來, tag 可於後面附加上去</span></span><br><span class="line">docker pull ubuntu:16.04 <span class="comment"># 只抓取 Ubuntu 16.04 的 Image</span></span><br><span class="line">docker pull debian:jessie</span><br><span class="line">docker pull debian:latest <span class="comment"># library/debian - Docker Hub，latest 只會抓最新版 (Debain Docker 官方版)</span></span><br><span class="line">docker pull ubuntu:latest <span class="comment"># library/ubuntu - Docker Hub</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-列出-Local-Images"><a href="#Docker-列出-Local-Images" class="headerlink" title="Docker 列出 Local Images"></a>Docker 列出 Local Images</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker images <span class="comment"># 列出images</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-啟動-Image-產生-Container-start"><a href="#Docker-啟動-Image-產生-Container-start" class="headerlink" title="Docker 啟動 Image 產生 Container (start)"></a>Docker 啟動 Image 產生 Container (start)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker start hash-id <span class="comment"># docker ps -a 看到想要讓他執行，可以直接 start</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-暫停-Image-產生-Container-stop"><a href="#Docker-暫停-Image-產生-Container-stop" class="headerlink" title="Docker 暫停 Image 產生 Container (stop)"></a>Docker 暫停 Image 產生 Container (stop)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker stop hash-id <span class="comment"># 此 hash-id 由 docker ps 可找到</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-執行-Image-產生-Container-Run"><a href="#Docker-執行-Image-產生-Container-Run" class="headerlink" title="Docker 執行 Image 產生 Container (Run)"></a>Docker 執行 Image 產生 Container (Run)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">docker run</span><br><span class="line">docker run -d debian:jessie <span class="comment"># 會自動執行 docker pull + 啟動並進入背景執行</span></span><br><span class="line">docker run -it debian:jessie bash <span class="comment"># 會自動執行 docker pull，跑起來自動執行 bash 程式進入此 Container</span></span><br><span class="line">docker run --rm debian:jessie bash <span class="comment"># Container 執行停止(docker stop container-name)後，會自動移除</span></span><br><span class="line">docker run -d -p 80:80 nginx <span class="comment"># 把裡面的 80 port 導到外面的 80 port (host Port:container Port)</span></span><br><span class="line">docker run ubuntu:trusty /bin/<span class="built_in">echo</span> <span class="string">&quot;hello world&quot;</span> <span class="comment"># 說明如下</span></span><br><span class="line">image name：ubuntu:trusty</span><br><span class="line">execute：/bin/<span class="built_in">echo</span></span><br><span class="line">argument：<span class="string">&quot;hello world&quot;</span></span><br><span class="line">docker run ubuntu:latest /bin/sh -c <span class="string">&quot;while true; do echo hello, world; sleep 1; done;&quot;</span></span><br><span class="line">docker run -d ubuntu:latest /bin/sh -c <span class="string">&quot;while true; do echo hello, world; sleep 1; done;&quot;</span> <span class="comment"># -d 會進入背景執行</span></span><br><span class="line">docker run -d ubuntu:latest /bin/sh -c <span class="string">&quot;apt install apt-utils; done;&quot;</span> <span class="comment"># 安裝套件</span></span><br><span class="line">docker run -it --name <span class="built_in">test</span> ubuntu <span class="comment"># 指定名稱</span></span><br><span class="line">docker run -d -p 3306:3306 -e MYSQLROOTPASSWORD=1234 mysql <span class="comment"># 指定 port 與 密碼</span></span><br><span class="line">mysql -u root -p1234 -h 172.17.42.1 <span class="comment"># 於外部可直接連進 Docker 內部 MySQL</span></span><br><span class="line">docker run -d -p 3307:3306 -e MYSQLROOTPASSWORD=1234 mysql <span class="comment"># 本機 3307 對應到 docker 3306</span></span><br><span class="line">mysql -u root -p1234 -P 3307 -h 172.17.42.1</span><br><span class="line">docker run -d --name web -m 512m -p 8080:80 nginx <span class="comment"># 限制記憶體大小</span></span><br><span class="line">docker run -d --expose=80 --name nginx-web nginx</span><br><span class="line">docker run -d -v $(<span class="built_in">pwd</span>)/project:/var/www --rm --name container-name -p 80:80 container-name <span class="comment"># 綜合上述，啟動執行，docker stop 順便移除</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-執行-Container-命令-Exec"><a href="#Docker-執行-Container-命令-Exec" class="headerlink" title="Docker 執行 Container 命令 (Exec)"></a>Docker 執行 Container 命令 (Exec)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">exec</span> hash-id /sbin/ifconfig</span><br><span class="line">docker <span class="built_in">exec</span> -t hash-id /bin/bash</span><br><span class="line">docker <span class="built_in">exec</span> -it debian:latest /bin/bash</span><br><span class="line">docker <span class="built_in">exec</span> -it debian:latest /sbin/ifconfig</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-掛載目錄進入-Container-Run-v"><a href="#Docker-掛載目錄進入-Container-Run-v" class="headerlink" title="Docker 掛載目錄進入 Container (Run -v)"></a>Docker 掛載目錄進入 Container (Run -v)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">docker -v 掛載點</span><br><span class="line">docker run -d --name xxx -p 80:80 -p 3306:3306 -v /mnt/xxx:/mnt debian:jessie</span><br><span class="line"><span class="comment">#/mnt/xxx：目前 Local 環境目錄</span></span><br><span class="line"><span class="comment">#/mnt：Container 目錄</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-產生、操作-Volume-VOLUME"><a href="#Docker-產生、操作-Volume-VOLUME" class="headerlink" title="Docker 產生、操作 Volume (VOLUME)"></a>Docker 產生、操作 Volume (VOLUME)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">docker volume create --name myvol <span class="comment"># 建立 local volume</span></span><br><span class="line">docker run -v myvol:/data <span class="comment"># Container start 就 Mount 此 volume</span></span><br><span class="line">docker volume rm myvol <span class="comment"># 砍掉 volume</span></span><br><span class="line">docker volume ls <span class="comment"># 列出 volumes</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-列出-Container-PS"><a href="#Docker-列出-Container-PS" class="headerlink" title="Docker 列出 Container (PS)"></a>Docker 列出 Container (PS)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker ps <span class="comment"># 還在執行中的 Container，可以看到詳細 hash id</span></span><br><span class="line">docker ps -a <span class="comment"># 執行、停止的 Container 都列出來</span></span><br><span class="line">docker ps -l -q <span class="comment"># 只列出 hash id，常用，可考慮加入 .bashrc：alias dl=&#x27;docker ps -l -q&#x27;</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-進入-Attach-Container"><a href="#Docker-進入-Attach-Container" class="headerlink" title="Docker 進入(Attach) Container"></a>Docker 進入(Attach) Container</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker attach hash-id <span class="comment"># -d 模式後，attach hash id 會回到此 conatiner console，&quot;ctrl-p, ctrl-q detach&quot;.</span></span><br></pre></td></tr></table></figure>
+<ul>
+<li><strong>註：attach 進去此 Container，若沒有用 detach 而是 exit 離開，此 Container 也會跟著離開結束</strong></li>
+</ul>
+<h3 id="Docker-列出-Logs"><a href="#Docker-列出-Logs" class="headerlink" title="Docker 列出 Logs"></a>Docker 列出 Logs</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker logs hash-id</span><br><span class="line">docker logs -f hash-id</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-刪除-Container-RM"><a href="#Docker-刪除-Container-RM" class="headerlink" title="Docker 刪除 Container (RM)"></a>Docker 刪除 Container (RM)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">docker rm hash-id <span class="comment"># CONTAINER ID</span></span><br><span class="line">docker rm -f hash-id <span class="comment"># 強置刪除</span></span><br><span class="line">docker rm $(docker ps --filter status=exited -q) <span class="comment"># 砍掉所有停止的 Container</span></span><br><span class="line">docker rm $(docker ps -a -q) <span class="comment"># 移除所有 Containers</span></span><br><span class="line">docker ps --filter <span class="string">&quot;status=exited&quot;</span> | grep <span class="string">&#x27;weeks ago&#x27;</span> | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span> | xargs --no-run-if-empty docker rm <span class="comment"># 一次砍掉狀態是 exited，而且是幾週前的 container</span></span><br><span class="line">docker ps -a | awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span> | xargs --no-run-if-empty docker rm <span class="comment"># ps -a 砍掉全部 stop 的 container</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-刪除-Images-RMI"><a href="#Docker-刪除-Images-RMI" class="headerlink" title="Docker 刪除 Images (RMI)"></a>Docker 刪除 Images (RMI)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">docker rmi image-id <span class="comment"># docker images 可以看到 image-id</span></span><br><span class="line">docker rmi -f image-id <span class="comment"># 強置刪除</span></span><br><span class="line">docker rmi $(docker images -q) <span class="comment"># 移除所有 docker images</span></span><br><span class="line">docker rmi docker images -qa <span class="comment"># 移除所有 docker images</span></span><br><span class="line">docker rmi $(docker images -f <span class="string">&quot;dangling=true&quot;</span> -q) <span class="comment"># 砍所有沒有 tag 的 image</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-查看-Docker-詳細資訊-INSPECT"><a href="#Docker-查看-Docker-詳細資訊-INSPECT" class="headerlink" title="Docker 查看 Docker 詳細資訊 (INSPECT)"></a>Docker 查看 Docker 詳細資訊 (INSPECT)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker inspect mysql</span><br><span class="line">docker inspect mysql | grep IPAddre <span class="comment"># 想抓取 ip</span></span><br></pre></td></tr></table></figure>
+<h3 id="Dockfile-產生-Image-BUILD"><a href="#Dockfile-產生-Image-BUILD" class="headerlink" title="Dockfile 產生 Image(BUILD)"></a>Dockfile 產生 Image(BUILD)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker build -t myimage . <span class="comment"># build image，需要 Dockerfile</span></span><br><span class="line">docker build -t user-name/v1.0.0 .</span><br></pre></td></tr></table></figure>
+<h3 id="由-Contain-產生-Image-COMMIT"><a href="#由-Contain-產生-Image-COMMIT" class="headerlink" title="由 Contain 產生 Image (COMMIT)"></a>由 Contain 產生 Image (COMMIT)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker commit hash-id myimage <span class="comment"># 由 Container 產生 Image</span></span><br><span class="line">docker commit -m <span class="string">&#x27;commit-message&#x27;</span> hash-id tsung/myimage:tag-name <span class="comment"># 用此 hash-id 現在的</span></span><br><span class="line">內容包成 Image (tsung/myimage)，同時設定 Tag tag-name</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-將-Container-重新命名-RENAME"><a href="#Docker-將-Container-重新命名-RENAME" class="headerlink" title="Docker 將 Container 重新命名 (RENAME)"></a>Docker 將 Container 重新命名 (RENAME)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker rename hash-id new-name</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-從-CONTAINER-複製檔案出來-CP"><a href="#Docker-從-CONTAINER-複製檔案出來-CP" class="headerlink" title="Docker 從 CONTAINER 複製檔案出來 (CP)"></a>Docker 從 CONTAINER 複製檔案出來 (CP)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker cp hash-id:/etc/group /tmp <span class="comment"># Container-id:path local-storage</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-儲存當下環境的-Image-到-tar-SAVE"><a href="#Docker-儲存當下環境的-Image-到-tar-SAVE" class="headerlink" title="Docker 儲存當下環境的 Image 到 tar - (SAVE)"></a>Docker 儲存當下環境的 Image 到 tar - (SAVE)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">docker save image-name &gt; image-name.tar <span class="comment"># 存 Image</span></span><br><span class="line">docker save -o debian.tar debian:jessie</span><br><span class="line">docker save -o ubuntu.tar ubuntu:lucid ubuntu:saucy</span><br><span class="line">註：save 儲存當下 Image 變動部份，與原始 Image 是分開的 (存映像檔，包成 Image)</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-由-tar-還原回-Image-LOAD"><a href="#Docker-由-tar-還原回-Image-LOAD" class="headerlink" title="Docker 由 tar 還原回 Image (LOAD)"></a>Docker 由 tar 還原回 Image (LOAD)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker load &lt; image-name.tar <span class="comment"># save tar</span></span><br><span class="line">註：Load an image from a tar archive or STDIN</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-儲存當下環境的-Image-含原始-Image-到-tar-EXPORT"><a href="#Docker-儲存當下環境的-Image-含原始-Image-到-tar-EXPORT" class="headerlink" title="Docker 儲存當下環境的 Image(含原始 Image) 到 tar (EXPORT)"></a>Docker 儲存當下環境的 Image(含原始 Image) 到 tar (EXPORT)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">export</span> image-name &gt; image-name.tar</span><br><span class="line">docker <span class="built_in">export</span> --output=<span class="string">&quot;image-name.tar&quot;</span> image-name</span><br><span class="line">註：只要有此 tar 檔，到其它機器都可以直接立刻使用 (把現在的環境打包，當下的 container)</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-由-TAR-還原回-Container-IMPORT"><a href="#Docker-由-TAR-還原回-Container-IMPORT" class="headerlink" title="Docker 由 TAR 還原回 Container (IMPORT)"></a>Docker 由 TAR 還原回 Container (IMPORT)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">docker import &lt; image-name.tar <span class="comment"># 直接建立一個新的 Container</span></span><br><span class="line">cat image-name.tar | docker import - <span class="built_in">local</span>/image-name <span class="comment"># image-name.tar = export tar</span></span><br><span class="line">註：Import the contents from a tarball to create a filesystem image</span><br></pre></td></tr></table></figure>
+<h3 id="Docker-查看-Container-Port-PORT"><a href="#Docker-查看-Container-Port-PORT" class="headerlink" title="Docker 查看 Container Port (PORT)"></a>Docker 查看 Container Port (PORT)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker port hash-id <span class="comment"># 80/tcp -&gt; 0.0.0.0:80</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-查看-Container-Process-TOP"><a href="#Docker-查看-Container-Process-TOP" class="headerlink" title="Docker 查看 Container Process (TOP)"></a>Docker 查看 Container Process (TOP)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker top hash-id <span class="comment"># 秀出 Container 正在執行的 process</span></span><br></pre></td></tr></table></figure>
+<h3 id="Docker-砍掉正在跑得-Container-KILL"><a href="#Docker-砍掉正在跑得-Container-KILL" class="headerlink" title="Docker 砍掉正在跑得 Container (KILL)"></a>Docker 砍掉正在跑得 Container (KILL)</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">docker <span class="built_in">kill</span> hash-id</span><br><span class="line">docker <span class="built_in">kill</span> $(docker ps -q) <span class="comment"># 停止所有 Containers</span></span><br></pre></td></tr></table></figure>
+<h3 id="執行-Docker-不需-sudo-的設定方式"><a href="#執行-Docker-不需-sudo-的設定方式" class="headerlink" title="執行 Docker 不需 sudo 的設定方式"></a>執行 Docker 不需 sudo 的設定方式</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">vim /etc/group <span class="comment"># 將帳號加入 docker group 就不會每次都需要 sudo</span></span><br><span class="line">docker:x:999:username</span><br><span class="line">或</span><br><span class="line">sudo gpasswd -a <span class="variable">$&#123;USER&#125;</span> docker <span class="comment"># 將自己此帳號加入 docker group</span></span><br><span class="line">sudo service docker restart</span><br></pre></td></tr></table></figure>
+<h2 id="官方文件"><a href="#官方文件" class="headerlink" title="官方文件"></a>官方文件</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/">Docker Documentation</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/get-started/">Orientation and setup - Get Started</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/engine/">Docker Engine overview - Guide</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/reference/">Reference documentation | Docker Documentation</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.docker.com/resources/what-container">What is a Container? | App Containerization</a> - 關於 Container 的官方圖文解說版</li>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/config/daemon/">Configure and troubleshoot the Docker daemon</a> - Docker Debug 文件</li>
+</ul>
+<h2 id="相關網頁"><a href="#相關網頁" class="headerlink" title="相關網頁"></a>相關網頁</h2><p><a target="_blank" rel="noopener" href="http://deeeet.com/writing/2013/12/08/docker-cheat-with-exmaple/">Docker cheat sheet with examples</a><br><a target="_blank" rel="noopener" href="http://sssslide.com/speakerdeck.com/bmorearty/15-docker-tips-in-5-minutes">15 Docker Tips in 5 Minutes</a><br><a target="_blank" rel="noopener" href="https://zeroturnaround.com/rebellabs/docker-commands-and-best-practices-cheat-sheet/">Docker Commands and Best Practices Cheat Sheet</a><br><a target="_blank" rel="noopener" href="http://files.zeroturnaround.com/pdf/zt_docker_cheat_sheet.pdf">Docker Cheat Sheet</a> - PDF<br><a target="_blank" rel="noopener" href="https://dockerlux.github.io/pdf/cheat-sheet-v2.pdf">Docker Cheat Sheet</a> - PDF<br><a target="_blank" rel="noopener" href="https://github.com/wsargent/docker-cheat-sheet">wsargent/docker-cheat-sheet · GitHub</a><br><a target="_blank" rel="noopener" href="http://lzone.de/cheat-sheet/Docker">Docker Cheat Sheet</a><br><a target="_blank" rel="noopener" href="http://stackoverflow.com/questions/17236796/how-to-remove-old-docker-containers">How to remove old Docker containers</a><br>[10張圖帶你深入理解 Docker 容器和鏡像] - docker run 與 docker start 的不同(<a target="_blank" rel="noopener" href="http://dockone.io/article/783">http://dockone.io/article/783</a>)<br><a target="_blank" rel="noopener" href="https://blog.longwin.com.tw/2017/01/docker-learn-initial-command-cheat-sheet-2017/">Docker 初學筆記 - 基本指令操作教學</a> - Tsung’s Blog</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/03/23/hello-world/" rel="prev" title="Hello World">
+      <i class="fa fa-chevron-left"></i> Hello World
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Docker-%E7%AD%86%E8%A8%98-%E5%9F%BA%E6%9C%AC%E6%8C%87%E4%BB%A4%EF%BC%88%E5%B8%B8%E7%94%A8%E6%8C%87%E4%BB%A4%EF%BC%89"><span class="nav-number">1.</span> <span class="nav-text">Docker 筆記 - 基本指令（常用指令）</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker%E5%9F%BA%E6%9C%AC%E8%A7%80%E5%BF%B5"><span class="nav-number">1.1.</span> <span class="nav-text">Docker基本觀念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Docker%E5%B8%B8%E7%94%A8%E6%8C%87%E4%BB%A4"><span class="nav-number">1.2.</span> <span class="nav-text">Docker常用指令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E7%89%88%E6%9C%AC%E8%B3%87%E8%A8%8A"><span class="nav-number">1.2.1.</span> <span class="nav-text">Docker 版本資訊</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E6%90%9C%E5%B0%8B-Image"><span class="nav-number">1.2.2.</span> <span class="nav-text">Docker 搜尋 Image</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E6%8A%93%E5%8F%96-Image"><span class="nav-number">1.2.3.</span> <span class="nav-text">Docker 抓取 Image</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%88%97%E5%87%BA-Local-Images"><span class="nav-number">1.2.4.</span> <span class="nav-text">Docker 列出 Local Images</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%95%9F%E5%8B%95-Image-%E7%94%A2%E7%94%9F-Container-start"><span class="nav-number">1.2.5.</span> <span class="nav-text">Docker 啟動 Image 產生 Container (start)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E6%9A%AB%E5%81%9C-Image-%E7%94%A2%E7%94%9F-Container-stop"><span class="nav-number">1.2.6.</span> <span class="nav-text">Docker 暫停 Image 產生 Container (stop)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%9F%B7%E8%A1%8C-Image-%E7%94%A2%E7%94%9F-Container-Run"><span class="nav-number">1.2.7.</span> <span class="nav-text">Docker 執行 Image 產生 Container (Run)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%9F%B7%E8%A1%8C-Container-%E5%91%BD%E4%BB%A4-Exec"><span class="nav-number">1.2.8.</span> <span class="nav-text">Docker 執行 Container 命令 (Exec)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E6%8E%9B%E8%BC%89%E7%9B%AE%E9%8C%84%E9%80%B2%E5%85%A5-Container-Run-v"><span class="nav-number">1.2.9.</span> <span class="nav-text">Docker 掛載目錄進入 Container (Run -v)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E7%94%A2%E7%94%9F%E3%80%81%E6%93%8D%E4%BD%9C-Volume-VOLUME"><span class="nav-number">1.2.10.</span> <span class="nav-text">Docker 產生、操作 Volume (VOLUME)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%88%97%E5%87%BA-Container-PS"><span class="nav-number">1.2.11.</span> <span class="nav-text">Docker 列出 Container (PS)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E9%80%B2%E5%85%A5-Attach-Container"><span class="nav-number">1.2.12.</span> <span class="nav-text">Docker 進入(Attach) Container</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%88%97%E5%87%BA-Logs"><span class="nav-number">1.2.13.</span> <span class="nav-text">Docker 列出 Logs</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%88%AA%E9%99%A4-Container-RM"><span class="nav-number">1.2.14.</span> <span class="nav-text">Docker 刪除 Container (RM)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%88%AA%E9%99%A4-Images-RMI"><span class="nav-number">1.2.15.</span> <span class="nav-text">Docker 刪除 Images (RMI)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E6%9F%A5%E7%9C%8B-Docker-%E8%A9%B3%E7%B4%B0%E8%B3%87%E8%A8%8A-INSPECT"><span class="nav-number">1.2.16.</span> <span class="nav-text">Docker 查看 Docker 詳細資訊 (INSPECT)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dockfile-%E7%94%A2%E7%94%9F-Image-BUILD"><span class="nav-number">1.2.17.</span> <span class="nav-text">Dockfile 產生 Image(BUILD)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%B1-Contain-%E7%94%A2%E7%94%9F-Image-COMMIT"><span class="nav-number">1.2.18.</span> <span class="nav-text">由 Contain 產生 Image (COMMIT)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%B0%87-Container-%E9%87%8D%E6%96%B0%E5%91%BD%E5%90%8D-RENAME"><span class="nav-number">1.2.19.</span> <span class="nav-text">Docker 將 Container 重新命名 (RENAME)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%BE%9E-CONTAINER-%E8%A4%87%E8%A3%BD%E6%AA%94%E6%A1%88%E5%87%BA%E4%BE%86-CP"><span class="nav-number">1.2.20.</span> <span class="nav-text">Docker 從 CONTAINER 複製檔案出來 (CP)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%84%B2%E5%AD%98%E7%95%B6%E4%B8%8B%E7%92%B0%E5%A2%83%E7%9A%84-Image-%E5%88%B0-tar-SAVE"><span class="nav-number">1.2.21.</span> <span class="nav-text">Docker 儲存當下環境的 Image 到 tar - (SAVE)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E7%94%B1-tar-%E9%82%84%E5%8E%9F%E5%9B%9E-Image-LOAD"><span class="nav-number">1.2.22.</span> <span class="nav-text">Docker 由 tar 還原回 Image (LOAD)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E5%84%B2%E5%AD%98%E7%95%B6%E4%B8%8B%E7%92%B0%E5%A2%83%E7%9A%84-Image-%E5%90%AB%E5%8E%9F%E5%A7%8B-Image-%E5%88%B0-tar-EXPORT"><span class="nav-number">1.2.23.</span> <span class="nav-text">Docker 儲存當下環境的 Image(含原始 Image) 到 tar (EXPORT)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E7%94%B1-TAR-%E9%82%84%E5%8E%9F%E5%9B%9E-Container-IMPORT"><span class="nav-number">1.2.24.</span> <span class="nav-text">Docker 由 TAR 還原回 Container (IMPORT)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E6%9F%A5%E7%9C%8B-Container-Port-PORT"><span class="nav-number">1.2.25.</span> <span class="nav-text">Docker 查看 Container Port (PORT)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E6%9F%A5%E7%9C%8B-Container-Process-TOP"><span class="nav-number">1.2.26.</span> <span class="nav-text">Docker 查看 Container Process (TOP)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Docker-%E7%A0%8D%E6%8E%89%E6%AD%A3%E5%9C%A8%E8%B7%91%E5%BE%97-Container-KILL"><span class="nav-number">1.2.27.</span> <span class="nav-text">Docker 砍掉正在跑得 Container (KILL)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%B7%E8%A1%8C-Docker-%E4%B8%8D%E9%9C%80-sudo-%E7%9A%84%E8%A8%AD%E5%AE%9A%E6%96%B9%E5%BC%8F"><span class="nav-number">1.2.28.</span> <span class="nav-text">執行 Docker 不需 sudo 的設定方式</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%98%E6%96%B9%E6%96%87%E4%BB%B6"><span class="nav-number">1.3.</span> <span class="nav-text">官方文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%B8%E9%97%9C%E7%B6%B2%E9%A0%81"><span class="nav-number">1.4.</span> <span class="nav-text">相關網頁</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Joey Liao</p>
+  <div class="site-description" itemprop="description">滾</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joey Liao</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
