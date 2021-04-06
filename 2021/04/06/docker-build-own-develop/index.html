@@ -20,19 +20,20 @@
     var CONFIG = {"hostname":"ziiyuliao.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+  <meta name="description" content="使用 Docker 建置自己的開發環境不想要寫 DockerFile，可以怎麼做呢？  想要建置自己的開發環境，最快的方法就是開一台機器，然後在上面把自己想要的套件全部安裝完成，最後將這個環境存成一個新的 Image 即可。之後要開啟這個開發環境，就跟開新的 Container 一樣的作法，可以隨意開啟下述是使用 Debian Buster 為 Base Image，然後在上面快速簡易的安裝架設環">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://ziiyuliao.github.io/2021/03/23/hello-world/index.html">
+<meta property="og:title" content="Docker 快速建置自己的開發環境">
+<meta property="og:url" content="http://ziiyuliao.github.io/2021/04/06/docker-build-own-develop/index.html">
 <meta property="og:site_name" content="JL 蝦七八筆記">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+<meta property="og:description" content="使用 Docker 建置自己的開發環境不想要寫 DockerFile，可以怎麼做呢？  想要建置自己的開發環境，最快的方法就是開一台機器，然後在上面把自己想要的套件全部安裝完成，最後將這個環境存成一個新的 Image 即可。之後要開啟這個開發環境，就跟開新的 Container 一樣的作法，可以隨意開啟下述是使用 Debian Buster 為 Base Image，然後在上面快速簡易的安裝架設環">
 <meta property="og:locale" content="zh_TW">
-<meta property="article:published_time" content="2021-03-23T02:33:56.798Z">
-<meta property="article:modified_time" content="2021-04-01T02:55:21.468Z">
+<meta property="article:published_time" content="2021-04-06T01:31:42.000Z">
+<meta property="article:modified_time" content="2021-04-06T01:55:02.504Z">
 <meta property="article:author" content="Joey Liao">
+<meta property="article:tag" content="Docker">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://ziiyuliao.github.io/2021/03/23/hello-world/">
+<link rel="canonical" href="http://ziiyuliao.github.io/2021/04/06/docker-build-own-develop/">
 
 
 <script id="page-configurations">
@@ -45,7 +46,7 @@
   };
 </script>
 
-  <title>Hello World | JL 蝦七八筆記</title>
+  <title>Docker 快速建置自己的開發環境 | JL 蝦七八筆記</title>
   
 
 
@@ -151,7 +152,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
-    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/03/23/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/04/06/docker-build-own-develop/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -164,7 +165,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          Hello World
+          Docker 快速建置自己的開發環境
         </h1>
 
         <div class="post-meta">
@@ -173,16 +174,10 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2021-03-23 10:33:56" itemprop="dateCreated datePublished" datetime="2021-03-23T10:33:56+08:00">2021-03-23</time>
+              <time title="Created: 2021-04-06 09:31:42 / Modified: 09:55:02" itemprop="dateCreated datePublished" datetime="2021-04-06T09:31:42+08:00">2021-04-06</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-01 10:55:21" itemprop="dateModified" datetime="2021-04-01T10:55:21+08:00">2021-04-01</time>
-              </span>
 
           
 
@@ -195,20 +190,43 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<span id="more"></span>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+        <h1 id="使用-Docker-建置自己的開發環境"><a href="#使用-Docker-建置自己的開發環境" class="headerlink" title="使用 Docker 建置自己的開發環境"></a>使用 Docker 建置自己的開發環境</h1><p><strong>不想要寫 DockerFile，可以怎麼做呢？</strong></p>
+<blockquote>
+<p>想要建置自己的開發環境，最快的方法就是開一台機器，然後在上面把自己想要的套件全部安裝完成，最後將這個環境存成一個新的 Image 即可。<br>之後要開啟這個開發環境，就跟開新的 Container 一樣的作法，可以隨意開啟<br>下述是使用 Debian Buster 為 Base Image，然後在上面快速簡易的安裝架設環境，然後將 Image 儲存下來。</p>
+</blockquote>
+<ol>
+<li>docker pull debian:buster</li>
+<li>docker run -itd debian:buster</li>
+<li>docker ps # get [container-id]</li>
+<li>docker exec -it [container-id] /bin/bash<ul>
+<li>ln -sf /usr/share/zoneinfo/Asia/Taipei /etc/localtime # 設定 GMT+8</li>
+<li>apt update</li>
+<li>apt upgrade</li>
+<li>apt install php # install apache2 php</li>
+<li>apt clean</li>
+<li>exit</li>
+</ul>
+</li>
+<li>docker ps # get [container-id]</li>
+<li>docker commit [container-id] [username]/debian:buster-dev # username 請換成自己名字(也可隨意輸入)，後面 debina:buster-dev 是自己取名的 Image Name:Tag</li>
+<li>docker images<ul>
+<li>[username]/debian buster-dev [image-id] 2 minutes ago 295MB</li>
+</ul>
+</li>
+<li>docker stop [container-id] # 把之前開來 build image (commit) 的那台關掉</li>
+<li><strong>完成新的 Image</strong></li>
+</ol>
+<h1 id="使用新的-Image-來開啟新的-Container"><a href="#使用新的-Image-來開啟新的-Container" class="headerlink" title="使用新的 Image 來開啟新的 Container"></a>使用新的 Image 來開啟新的 Container</h1><ol>
+<li>docker run -itd [username]/debian:buster-dev # 跑剛剛完成的 新image (debian:buster-dev 是自己取名的)</li>
+<li>或 docker run -itd -p 80:80 -v /tmp/html:/var/www/html [username]/debian:buster-dev # 想要把 port 和 資料夾 mount 進去</li>
+<li>docker ps # get [new-conainer-id]</li>
+<li>docker exec -it [new-conainer-id] /bin/bash<ul>
+<li>date # 確認是否為 GMT+8 的時間</li>
+<li>service apache2 start # 開啟 Apache 看外面是否能連到</li>
+</ul>
+</li>
+</ol>
+<h1 id="參考文件"><a href="#參考文件" class="headerlink" title="參考文件"></a>參考文件</h1><p><a target="_blank" rel="noopener" href="https://blog.longwin.com.tw/2020/08/docker-build-own-develop-env-2020/">使用 Docker 快速建置自己的開發環境 - Tsung</a></p>
 
     </div>
 
@@ -217,17 +235,20 @@
     
 
       <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+          </div>
 
         
 
 
         
     <div class="post-nav">
-      <div class="post-nav-item"></div>
       <div class="post-nav-item">
-    <a href="/2021/03/30/docker-learn-command/" rel="next" title="Docker筆記-基本指令">
-      Docker筆記-基本指令 <i class="fa fa-chevron-right"></i>
+    <a href="/2021/03/31/vi-command/" rel="prev" title="vi指令說明">
+      <i class="fa fa-chevron-left"></i> vi指令說明
     </a></div>
+      <div class="post-nav-item"></div>
     </div>
       </footer>
     
@@ -286,7 +307,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Quick-Start"><span class="nav-number">1.</span> <span class="nav-text">Quick Start</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Create-a-new-post"><span class="nav-number">1.1.</span> <span class="nav-text">Create a new post</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Run-server"><span class="nav-number">1.2.</span> <span class="nav-text">Run server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Generate-static-files"><span class="nav-number">1.3.</span> <span class="nav-text">Generate static files</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deploy-to-remote-sites"><span class="nav-number">1.4.</span> <span class="nav-text">Deploy to remote sites</span></a></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-Docker-%E5%BB%BA%E7%BD%AE%E8%87%AA%E5%B7%B1%E7%9A%84%E9%96%8B%E7%99%BC%E7%92%B0%E5%A2%83"><span class="nav-number">1.</span> <span class="nav-text">使用 Docker 建置自己的開發環境</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E6%96%B0%E7%9A%84-Image-%E4%BE%86%E9%96%8B%E5%95%9F%E6%96%B0%E7%9A%84-Container"><span class="nav-number">2.</span> <span class="nav-text">使用新的 Image 來開啟新的 Container</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%83%E8%80%83%E6%96%87%E4%BB%B6"><span class="nav-number">3.</span> <span class="nav-text">參考文件</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
