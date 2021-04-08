@@ -148,6 +148,223 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/04/08/docker-compose-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Joey Liao">
+      <meta itemprop="description" content="隨意紀錄網路上看到的大神文章，僅供自己使用">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JL 蝦七八筆記">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/04/08/docker-compose-guide/" class="post-title-link" itemprop="url">Docker Compose - 安裝、指令筆記</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-04-08 11:43:33 / Modified: 15:08:22" itemprop="dateCreated datePublished" datetime="2021-04-08T11:43:33+08:00">2021-04-08</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Dockerfile和Docker Compose有什麼差別？</p>
+<blockquote>
+<p>簡單的來說</p>
+<ul>
+<li>Dockerfile是用來描述一個映像檔應該長的什麼樣子</li>
+<li>Docker Compose則是用來描述一個Service(服務)應該怎麼來組成<br>例如：在架設網站的時候你可能會用到Tomcat、MySQL等不同的容器，而Docker Compose的描述檔就是用來設定這些容器之間的關聯，諸如誰要先啟動、Port要怎麼設定等等的，用Docker Compose的方式可以一次帶起所有的服務 (即管理多個Container)，不需一個一個執行</li>
+</ul>
+</blockquote>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/04/08/docker-compose-guide/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/04/07/docker-dockerfile-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Joey Liao">
+      <meta itemprop="description" content="隨意紀錄網路上看到的大神文章，僅供自己使用">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JL 蝦七八筆記">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/04/07/docker-dockerfile-guide/" class="post-title-link" itemprop="url">Dockerfile指令教學</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-07 15:25:17" itemprop="dateCreated datePublished" datetime="2021-04-07T15:25:17+08:00">2021-04-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-08 11:34:47" itemprop="dateModified" datetime="2021-04-08T11:34:47+08:00">2021-04-08</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Dockerfile指令教學，含範例解說"><a href="#Dockerfile指令教學，含範例解說" class="headerlink" title="Dockerfile指令教學，含範例解說"></a>Dockerfile指令教學，含範例解說</h1><p><strong>客製化自己的Docker Image</strong></p>
+<h2 id="什麼是Dockerfile"><a href="#什麼是Dockerfile" class="headerlink" title="什麼是Dockerfile?"></a>什麼是Dockerfile?</h2><ul>
+<li>是一個文字檔，由一行一行的指令所組成，用來描述這個映像檔應該長成怎麼樣</li>
+<li>利用Dockerfile可以建構/客製化出自己獨一無二的映像檔</li>
+<li>由於Dockerfile中可以清楚的知道映像檔的組成，因此，在安全性上會有所提升</li>
+<li>因為是純文字檔，所以<strong>檔案很小</strong>、很<strong>容易分享</strong>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/04/07/docker-dockerfile-guide/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/04/07/docker-tips/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Joey Liao">
+      <meta itemprop="description" content="隨意紀錄網路上看到的大神文章，僅供自己使用">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JL 蝦七八筆記">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2021/04/07/docker-tips/" class="post-title-link" itemprop="url">Docker 小撇步</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-04-07 14:19:38 / Modified: 15:23:19" itemprop="dateCreated datePublished" datetime="2021-04-07T14:19:38+08:00">2021-04-07</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Docker小撇步筆記"><a href="#Docker小撇步筆記" class="headerlink" title="Docker小撇步筆記"></a>Docker小撇步筆記</h1><pre><code>本篇是蒐集自網路上的一些Docker使用上的小撇步，將不定期更新
+</code></pre>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2021/04/07/docker-tips/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
     <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/04/06/docker-build-own-develop/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -248,7 +465,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-04-06 10:22:36" itemprop="dateModified" datetime="2021-04-06T10:22:36+08:00">2021-04-06</time>
+                <time title="Modified: 2021-04-07 14:16:37" itemprop="dateModified" datetime="2021-04-07T14:16:37+08:00">2021-04-07</time>
               </span>
 
           
@@ -549,7 +766,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-count">7</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-tw">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"ziiyuliao.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Dockerfile指令教學，含範例解說客製化自己的Docker Image 什麼是Dockerfile? 是一個文字檔，由一行一行的指令所組成，用來描述這個映像檔應該長成怎麼樣 利用Dockerfile可以建構&#x2F;客製化出自己獨一無二的映像檔 由於Dockerfile中可以清楚的知道映像檔的組成，因此，在安全性上會有所提升 因為是純文字檔，所以檔案很小、很容易分享">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dockerfile指令教學">
+<meta property="og:url" content="http://ziiyuliao.github.io/2021/04/07/docker-dockerfile-guide/index.html">
+<meta property="og:site_name" content="JL 蝦七八筆記">
+<meta property="og:description" content="Dockerfile指令教學，含範例解說客製化自己的Docker Image 什麼是Dockerfile? 是一個文字檔，由一行一行的指令所組成，用來描述這個映像檔應該長成怎麼樣 利用Dockerfile可以建構&#x2F;客製化出自己獨一無二的映像檔 由於Dockerfile中可以清楚的知道映像檔的組成，因此，在安全性上會有所提升 因為是純文字檔，所以檔案很小、很容易分享">
+<meta property="og:locale" content="zh_TW">
+<meta property="article:published_time" content="2021-04-07T07:25:17.000Z">
+<meta property="article:modified_time" content="2021-04-08T03:34:47.510Z">
+<meta property="article:author" content="Joey Liao">
+<meta property="article:tag" content="Docker">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://ziiyuliao.github.io/2021/04/07/docker-dockerfile-guide/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-tw'
+  };
+</script>
+
+  <title>Dockerfile指令教學 | JL 蝦七八筆記</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">JL 蝦七八筆記</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">蝦記</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-tw">
+    <link itemprop="mainEntityOfPage" href="http://ziiyuliao.github.io/2021/04/07/docker-dockerfile-guide/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Joey Liao">
+      <meta itemprop="description" content="隨意紀錄網路上看到的大神文章，僅供自己使用">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="JL 蝦七八筆記">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Dockerfile指令教學
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-04-07 15:25:17" itemprop="dateCreated datePublished" datetime="2021-04-07T15:25:17+08:00">2021-04-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-04-08 11:34:47" itemprop="dateModified" datetime="2021-04-08T11:34:47+08:00">2021-04-08</time>
+              </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Dockerfile指令教學，含範例解說"><a href="#Dockerfile指令教學，含範例解說" class="headerlink" title="Dockerfile指令教學，含範例解說"></a>Dockerfile指令教學，含範例解說</h1><p><strong>客製化自己的Docker Image</strong></p>
+<h2 id="什麼是Dockerfile"><a href="#什麼是Dockerfile" class="headerlink" title="什麼是Dockerfile?"></a>什麼是Dockerfile?</h2><ul>
+<li>是一個文字檔，由一行一行的指令所組成，用來描述這個映像檔應該長成怎麼樣</li>
+<li>利用Dockerfile可以建構/客製化出自己獨一無二的映像檔</li>
+<li>由於Dockerfile中可以清楚的知道映像檔的組成，因此，在安全性上會有所提升</li>
+<li>因為是純文字檔，所以<strong>檔案很小</strong>、很<strong>容易分享</strong><span id="more"></span>
+<h2 id="Dockerfile-的組成"><a href="#Dockerfile-的組成" class="headerlink" title="Dockerfile 的組成"></a>Dockerfile 的組成</h2></li>
+</ul>
+<p>基本上Dockerfile是由一行一行的指令列所組成，一行指令對Image來說就是一層的資料層(Layer)，一個Image就是靠這樣一層一層的資料累加上去，最後才編譯出自己想要的映像檔，就像蓋房子一樣。</p>
+<p>常見Dockerfile內容中的指令如下：</p>
+<h3 id="＃開頭代表註解"><a href="#＃開頭代表註解" class="headerlink" title="＃開頭代表註解"></a>＃開頭代表註解</h3><p>文件中可以使用<em><strong>＃</strong></em>來進行註解</p>
+<h3 id="FORM"><a href="#FORM" class="headerlink" title="FORM"></a>FORM</h3><p><strong>基底映像檔</strong>，必需是「<strong>第一個</strong>」指令行，指定這個映像檔要以哪一個Image為基底來建構，<br>格式為</p>
+<blockquote>
+<p>FROM <image>或FROM <image>:<tag><br>範例如下：</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">FROM ubuntu:15.04 或</span><br><span class="line">FROM ubuntu</span><br></pre></td></tr></table></figure>
+
+<h3 id="MAINTAINER"><a href="#MAINTAINER" class="headerlink" title="MAINTAINER"></a>MAINTAINER</h3><p><strong>映像檔維護者</strong>，把它想成是<strong>作者</strong>即可，格式為</p>
+<blockquote>
+<p>MAINTAINER <name><br>範例如下：</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">MAINTAINER John 或</span><br><span class="line">MAINTAINER john@myemail.com 或</span><br><span class="line">MAINTAINER John john@myemail.com</span><br></pre></td></tr></table></figure>
+
+<h3 id="LABEL"><a href="#LABEL" class="headerlink" title="LABEL"></a>LABEL</h3><p><strong>設定映像檔的Metadata資訊</strong>，例如：作者、EMail、映像檔的說明等，格式為：LABEL</p>
+<blockquote>
+<p><key>=<value> <key>=<value> <key>=<value> …<br>簡單的來說就是以Key、Value來組成，它可以一行一組，也可以把全部合在一行撰寫，若多組合在一行，則每一組設定中間用空白鍵隔開即可，範例如下：</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">LABEL description=<span class="string">&quot;這是LABEL的範例&quot;</span> version=<span class="string">&quot;1.0&quot;</span> owner=<span class="string">&quot;靖技場&quot;</span></span><br></pre></td></tr></table></figure>
+<p>和MAINTAINER相比，建議使用LABEL來設定會比較方便，另外，如果要查詢LABEL的資訊，則可以下<em><strong>docker inspect</strong></em>來查詢</p>
+<h3 id="RUN"><a href="#RUN" class="headerlink" title="RUN"></a>RUN</h3><p><strong>執行指定的指令</strong>，每加一個RUN，就會在基底映像層加上一層資料層，以此類推，一層一層的建構起我們最後想要的映像檔，例如我們可以利用RUN來安裝套件，其格式分為二種：</p>
+<blockquote>
+<ol>
+<li>RUN <command>：以shell的形式執行，Linux的預設是/bin/sh -c，而Windows上的預設環境則是cmd /S /C</li>
+<li>RUN [“executable”, “param1”, “param2”]：以exec的形式執行指令，例如Linux上不想用預設的shell執行指令，那麼就可以透過RUN [“/bin/bash”, “-c”, “echo hello”]指定想要的shell</li>
+</ol>
+</blockquote>
+<p>shell形式與exec形式有什麼不同呢？<a target="_blank" rel="noopener" href="https://docs.docker.com/engine/reference/builder/#run">官方</a>有提到：</p>
+<blockquote>
+<p>Unlike the shell form, the exec form does not invoke a command shell. This means that normal shell processing does not happen. For example, RUN [ “echo”, “$HOME” ] will not do variable substitution on $HOME</p>
+</blockquote>
+<p>意思是說exec執行的方式不會使用command shell，所以執行 RUN [ “echo”, “$HOME” ] 這樣的指令列， $HOME 這個變數是不會被替代(填入值)的，也就是直接輸出「$HOME」，但如果你想要有Shell處理的功能，則可以自行指定shell來達成：RUN [ “sh”, “-c”, “echo $HOME” ]</p>
+<p>在使用RUN指令時，有以下注意要點：</p>
+<ul>
+<li>如果想要執行的指令很長，可以利用\符號來換行，比較容易閱讀</li>
+<li>使用exec形式執行時，必需使用JSON array的格式，因此，請使用雙引號</li>
+<li>每一個RUN就會新增一層資料層，為了減少不必要的資料層，可以利用&amp;&amp;來串連多個命令</li>
+</ul>
+<p>簡單的RUN指令範例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># install packages, only for demo</span></span><br><span class="line">RUN mkdir -p /home/demo/docker</span><br><span class="line">RUN [<span class="string">&quot;apt-get&quot;</span>, <span class="string">&quot;install&quot;</span>, <span class="string">&quot;python3&quot;</span>]</span><br><span class="line">RUN apt-get update &amp;&amp; apt-get install -y --force-yes apache2 \</span><br><span class="line">    firefox \</span><br><span class="line">    php5</span><br></pre></td></tr></table></figure>
+
+<h3 id="CMD"><a href="#CMD" class="headerlink" title="CMD"></a>CMD</h3><p><strong>設定映像檔啟動為Container時預設要執行的指令</strong>，其指令共支援三種格式：</p>
+<ol>
+<li>CMD [“executable”,”param1″,”param2″]：exec形式，官方推薦此種方式</li>
+<li>CMD [“param1″,”param2”]：適用於有定義ENTRYPOINT指令的時候，CMD中的參數會做為ENTRYPOINT的預設參數</li>
+<li>CMD command param1 param2：會以shell的形式執行，預設是在「/bin/sh -c」下執行，適合在需要互動的指令時</li>
+</ol>
+<p>使用CMD的注意事項：</p>
+<ul>
+<li>Dockerfile中只能有一行CMD，若有多行CMD，則只有最後一行會生效</li>
+<li>若在建立Container時有帶執行的命令，則CMD的指令會被蓋掉，例如：執行docker run <image id>時，CMD所定義的指令會被執行，但當執行docker run <image id> bash時，Container就會執行bash，而原本CMD中定義的值就會覆蓋</li>
+</ul>
+<p>CMD範例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">CMD <span class="built_in">echo</span> <span class="string">&quot;This is a test.&quot;</span> | wc -</span><br><span class="line">CMD [<span class="string">&quot;/usr/bin/wc&quot;</span>,<span class="string">&quot;--help&quot;</span>]</span><br><span class="line">CMD [ <span class="string">&quot;sh&quot;</span>, <span class="string">&quot;-c&quot;</span>, <span class="string">&quot;echo <span class="variable">$HOME</span>&quot;</span> ]</span><br><span class="line"><span class="comment">#作為ENTRYPOINT的參數使用</span></span><br><span class="line">CMD [<span class="string">&quot;Hello&quot;</span>]</span><br></pre></td></tr></table></figure>
+<p>如果是使用docker run -it <image>來啟動Container，那麼輸出的結果為「Hello World」，但如果是用docker run -it <image> Docker來啟動，則輸出結果會變成「Hello Docker」，因為CMD的值被覆蓋掉了</p>
+<h3 id="COPY"><a href="#COPY" class="headerlink" title="COPY"></a>COPY</h3><p><strong>複製本地端的檔案/目錄到映像檔的指定位置中</strong>，其格式為：</p>
+<ul>
+<li>COPY [–chown=<user>:<group>] <src>… <dest></li>
+<li>COPY [–chown=<user>:<group>] [“<src>”,… “<dest>”]</li>
+</ul>
+<p>使用COPY的注意事項：</p>
+<ul>
+<li>指令的來源位置可以多個</li>
+<li>如果目的位置是目錄的話，記得最後要以/結尾，例如：/mypath/</li>
+<li>目的位置可以是絕對路徑或者相對於WORKDIR定義值的相對路徑</li>
+<li>若目的位置不存在，會自動建立<br>COPY的範例如下：<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">COPY file1.txt file2.js file3.json ./</span><br><span class="line">COPY [<span class="string">&quot;file1.txt&quot;</span>, <span class="string">&quot;file2.js&quot;</span>, <span class="string">&quot;file3.json&quot;</span> <span class="string">&quot;./&quot;</span>]</span><br></pre></td></tr></table></figure></li>
+</ul>
+<h3 id="ADD"><a href="#ADD" class="headerlink" title="ADD"></a>ADD</h3><p><strong>和COPY一樣，可將本地端的檔案/目錄加到映像檔的指定位置內</strong>，其格式為：</p>
+<ul>
+<li>ADD [–chown=<user>:<group>] <src>… <dest></li>
+<li>ADD [–chown=<user>:<group>] [“<src>”,… “<dest>”]</li>
+</ul>
+<p>雖然ADD和CMD功能類似，但有二點最大的不同：</p>
+<ol>
+<li>ADD的來源路徑支援URL，也就是說可以加入遠端的檔案，COPY則不支援URL</li>
+<li>若來源檔案是壓縮檔(副檔名為gzip、bzip2、xz)，則使用ADD加入檔案時會自動解壓縮，而COPY不會</li>
+</ol>
+<p>ADD的範例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ADD file1.txt file2.js file3.json ./</span><br><span class="line"><span class="comment"># ENV_DEMO_VALUE 是用ENV指令所設定的環境變數</span></span><br><span class="line">ADD https://www.google.com/demo.gzip <span class="variable">$ENV_DEMO_VALUE</span></span><br></pre></td></tr></table></figure>
+<p>除非你有自動解壓的需求，不然一般建議會使用「COPY」來加入檔案</p>
+<h3 id="EXPOSE"><a href="#EXPOSE" class="headerlink" title="EXPOSE"></a>EXPOSE</h3><p><strong>宣告在映像檔中預設要使用(對外)的連接埠</strong>，格式如下：</p>
+<ul>
+<li>EXPOSE <port> [<port>/<protocol>…]</li>
+</ul>
+<p>EXPOSE預設的協定是TCP，但如果不是要TCP的話，可以自行指定，範例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">EXPOSE 80/tcp</span><br><span class="line">EXPOSE 80/udp</span><br></pre></td></tr></table></figure>
+
+<p>使用EXPOSE所定義的連接埠並<strong>不會</strong>自動的啟用，而只是做提示的作用而已，要將連接埠啟用需要在執行docker run時，搭配-p或-P的參數來啟用。<br>小寫的-p可以自行指定與主機關聯的連接埠，例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -p 80:80/tcp -p 80:80/udp demo</span><br></pre></td></tr></table></figure>
+
+<p>大寫的-P則會啟用所有EXPOSE所定義的連接埠，並動態(隨機)的關聯到主機的連接埠，例如：EXPOSE 80 可能隨機關聯到主機的 45123 連接埠，其範例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker run -P demo</span><br></pre></td></tr></table></figure>
+
+<h3 id="ENV"><a href="#ENV" class="headerlink" title="ENV"></a>ENV</h3><p><strong>設定環境變數</strong>，支援二種格式：</p>
+<ul>
+<li>ENV <key> <value>：Key後面的第一個空白鍵後會視為Value</li>
+<li>ENV <key>=<value> …：用等於符號來定義，每一組中間以空白鍵隔開，我個人比較喜歡這種形式，不容易搞混</li>
+</ul>
+<p>ENV範例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">ENV demoPATH=<span class="string">&quot;/var/log&quot;</span> demoVer=<span class="string">&quot;1.0&quot;</span></span><br><span class="line"><span class="comment"># 設置「/tmp/test.txt」給demoFile變數</span></span><br><span class="line">ENV demoFile /tmp/test.txt</span><br><span class="line"></span><br><span class="line"><span class="comment"># 使用環境變數的例子，有沒有用大括號都可以</span></span><br><span class="line">COPY debug.log <span class="variable">$&#123;demoPATH&#125;</span></span><br><span class="line">ADD <span class="variable">$demoFile</span> /foo</span><br></pre></td></tr></table></figure>
+
+<p>使用ENV設置環境變數後，在Dockerfile中其他的指令就可以利用，之後在建起來的Container裡也可以使用該變數</p>
+<h3 id="VOLUME"><a href="#VOLUME" class="headerlink" title="VOLUME"></a>VOLUME</h3><p><strong>建立本機或來自其他容器的掛載點</strong>，指令格式如下：</p>
+<ul>
+<li>VOLUME [“/data”]</li>
+</ul>
+<p>VOLUME的值可以是JSON的Array格式，也可以是純文字，例如下以範例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">VOLUME [<span class="string">&quot;/var/log/&quot;</span>] 或</span><br><span class="line">VOLUME [<span class="string">&quot;/demo1&quot;</span>,<span class="string">&quot;/demo2&quot;</span>] 或</span><br><span class="line">VOLUME /var/<span class="built_in">log</span> 或</span><br><span class="line">VOLUME /var/<span class="built_in">log</span> /var/db</span><br></pre></td></tr></table></figure>
+<p>要特別注意的是使用VOLUME來定義掛載點時，是無法指定本機對應的目錄的，對應到哪個目錄是自動產生，我們可以透過docker inspect來查詢目錄資訊</p>
+<h3 id="WORKDIR"><a href="#WORKDIR" class="headerlink" title="WORKDIR"></a>WORKDIR</h3><p><strong>設定工作目錄</strong>，其格式如下：</p>
+<ul>
+<li>WORKDIR /path/to/workdir</li>
+</ul>
+<p>當設定WORKDIR後，Dockerfile中的RUN、CMD、ENTRYPOINT、COPY、ADD等指令就會在該工作目錄下執行，以下是官方的示範：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">WORKDIR /a</span><br><span class="line">WORKDIR b</span><br><span class="line">WORKDIR c</span><br><span class="line">RUN <span class="built_in">pwd</span></span><br></pre></td></tr></table></figure>
+<p>在上面的範例中，pwd最後會在/a/b/c目錄下執行，如果目錄不存在，系統會幫忙自動建立</p>
+<h3 id="USER"><a href="#USER" class="headerlink" title="USER"></a>USER</h3><p><strong>指定運行Container時的用戶名稱或UID</strong>,其格式如下：</p>
+<ul>
+<li>USER <user>[:<group>]</li>
+<li>USER <UID>[:<gid>]</li>
+</ul>
+<p>在定義了USER後，則Dockerfile中的RUN、CMD、ENTRYPOINT等指令便會以USER指定的用戶來執行，前提條件是該用戶必需是已存在的，否則指定會失敗，範例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">RUN groupadd -r tester &amp;&amp; useradd -r -g tester tester</span><br><span class="line"><span class="comment"># 指定用戶名稱</span></span><br><span class="line">USER tester</span><br><span class="line"></span><br><span class="line"><span class="comment"># 或使用UID來指定</span></span><br><span class="line">USER 1000</span><br></pre></td></tr></table></figure>
+
+<h3 id="ARG"><a href="#ARG" class="headerlink" title="ARG"></a>ARG</h3><p><strong>設定在建置映像檔時可傳入的參數</strong>，即定義變數名稱以及變數的預設值，其格式為：</p>
+<ul>
+<li>ARG <name>[=<default value>]</li>
+</ul>
+<p>ARG和ENV的功能類似，都可以設定變數，但是ARG設定的值是供建置映像檔時使用(搭配docker build指令)，在Container中是無法使用這些變數的，相反地，ENV的值則可以在Container中存取，例如ARG的定義如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ARG Param1</span><br><span class="line">ARG Param2=somevalue</span><br></pre></td></tr></table></figure>
+<p>建構映像檔案，可利用–build-arg <varname>=<value>來指定參數，例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">docker build --build-arg Param1=demo -t myimage:v1 .</span><br></pre></td></tr></table></figure>
+<p>在上面的例子中，我們在docker build中利用–build-arg <varname>=<value>參數將Param1的值變更為「demo」，而Param2的值並沒有指定，所以保留預設值「somevalue」</p>
+<h3 id="ONBUILD"><a href="#ONBUILD" class="headerlink" title="ONBUILD"></a>ONBUILD</h3><p><strong>若這個映像檔是作為其他映像檔的基底時，便需要定義ONBUILD指令</strong>，格式為：</p>
+<ul>
+<li>ONBUILD [INSTRUCTION]</li>
+</ul>
+<p>ONBUILD後面接的指令在自建的映像檔中不會被執行，只有當這個映像檔是作為其他映像檔的基底時才會被觸發，例如A映像檔的Dockerfile定義如下(假設名稱為A-Image)：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">...(以上略)</span><br><span class="line">ONBUILD ADD . /home/tmp</span><br><span class="line">ONBUILD mkdir -p /home/demo/docker</span><br><span class="line">...(以下略)</span><br></pre></td></tr></table></figure>
+<p>此時如果B映像檔是以A映像檔為基底，則A映像檔中的ONBUILD指令就會被觸發，等於是以下指令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 以A映像檔為基底</span></span><br><span class="line">FROM A-Image</span><br><span class="line"></span><br><span class="line"><span class="comment"># 觸發A映像檔ONBUILD的指令，即會自動執行下面二個指令行</span></span><br><span class="line"><span class="comment"># 下面二行指令不用自己加，Docker會自動去執行，這邊寫出只是方便做說明</span></span><br><span class="line">ADD . /home/tmp</span><br><span class="line">mkdir -p /home/demo/docker</span><br></pre></td></tr></table></figure>
+
+<h2 id="如何使用Dockerfile"><a href="#如何使用Dockerfile" class="headerlink" title="如何使用Dockerfile ?"></a>如何使用Dockerfile ?</h2><p>介紹了那麼多的指令，最終的目的就是利用Dockerfile來建立我們自己的映像檔，其指令為<em><strong>docker build</strong></em>，範例如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 在目前目錄尋找Dockerfile或dockerfile</span></span><br><span class="line">docker build -t myimage:v1 .</span><br></pre></td></tr></table></figure>
+<ul>
+<li>-t：Name and optionally a tag in the ‘name:tag’ format，指定映像檔名稱、標籤</li>
+</ul>
+<p>在上面的範例中，是假設Dockerfile在當前目錄下，因此會以.結尾，若是在不同目錄，則可以直接接Dockerfile所在目錄或用-f來指定Dockerfile位置，例如：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 後面接Dockerfile的所在目錄</span></span><br><span class="line">docker build -t myimage:v2 ./docker</span><br><span class="line">docker build -f /path/to/a/Dockerfile -t myimage:v3 .</span><br></pre></td></tr></table></figure>
+<p>用-f來指定Dockerfile的位置時，後面接的目錄(及其子目錄)需要能夠找到Dockerfile，否則會出現context錯誤</p>
+<p>小結：Dockerfile裡面的指令也不少，但因篇幅的關係這邊沒有列出所有的指令，但應該也足夠滿足大部分的需求，想要更深入研究的話，建議可以參考官方的文件，但我個人認為最快的學習方法可以自己動手做做看，比較能夠體會每個指令到底有什麼功用</p>
+<h1 id="延伸閱讀"><a href="#延伸閱讀" class="headerlink" title="延伸閱讀"></a>延伸閱讀</h1><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/develop/develop-images/dockerfile_best-practices/">Best practices for writing Dockerfile</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/engine/reference/builder/">Dockerfile Reference</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/07/docker-tips/" rel="prev" title="Docker 小撇步">
+      <i class="fa fa-chevron-left"></i> Docker 小撇步
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/04/08/docker-compose-guide/" rel="next" title="Docker Compose - 安裝、指令筆記">
+      Docker Compose - 安裝、指令筆記 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Dockerfile%E6%8C%87%E4%BB%A4%E6%95%99%E5%AD%B8%EF%BC%8C%E5%90%AB%E7%AF%84%E4%BE%8B%E8%A7%A3%E8%AA%AA"><span class="nav-number">1.</span> <span class="nav-text">Dockerfile指令教學，含範例解說</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E9%BA%BC%E6%98%AFDockerfile"><span class="nav-number">1.1.</span> <span class="nav-text">什麼是Dockerfile?</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dockerfile-%E7%9A%84%E7%B5%84%E6%88%90"><span class="nav-number">1.2.</span> <span class="nav-text">Dockerfile 的組成</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%EF%BC%83%E9%96%8B%E9%A0%AD%E4%BB%A3%E8%A1%A8%E8%A8%BB%E8%A7%A3"><span class="nav-number">1.2.1.</span> <span class="nav-text">＃開頭代表註解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FORM"><span class="nav-number">1.2.2.</span> <span class="nav-text">FORM</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MAINTAINER"><span class="nav-number">1.2.3.</span> <span class="nav-text">MAINTAINER</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#LABEL"><span class="nav-number">1.2.4.</span> <span class="nav-text">LABEL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#RUN"><span class="nav-number">1.2.5.</span> <span class="nav-text">RUN</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CMD"><span class="nav-number">1.2.6.</span> <span class="nav-text">CMD</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#COPY"><span class="nav-number">1.2.7.</span> <span class="nav-text">COPY</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ADD"><span class="nav-number">1.2.8.</span> <span class="nav-text">ADD</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#EXPOSE"><span class="nav-number">1.2.9.</span> <span class="nav-text">EXPOSE</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ENV"><span class="nav-number">1.2.10.</span> <span class="nav-text">ENV</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#VOLUME"><span class="nav-number">1.2.11.</span> <span class="nav-text">VOLUME</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#WORKDIR"><span class="nav-number">1.2.12.</span> <span class="nav-text">WORKDIR</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#USER"><span class="nav-number">1.2.13.</span> <span class="nav-text">USER</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ARG"><span class="nav-number">1.2.14.</span> <span class="nav-text">ARG</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ONBUILD"><span class="nav-number">1.2.15.</span> <span class="nav-text">ONBUILD</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E4%BD%BF%E7%94%A8Dockerfile"><span class="nav-number">1.3.</span> <span class="nav-text">如何使用Dockerfile ?</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%BB%B6%E4%BC%B8%E9%96%B1%E8%AE%80"><span class="nav-number">2.</span> <span class="nav-text">延伸閱讀</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Joey Liao</p>
+  <div class="site-description" itemprop="description">隨意紀錄網路上看到的大神文章，僅供自己使用</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">7</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">tags</span>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-fish"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Joey Liao</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/pjax/pjax.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+    </div>
+</body>
+</html>
