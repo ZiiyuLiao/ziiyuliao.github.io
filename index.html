@@ -173,7 +173,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2021-08-11 16:00:00 / Modified: 16:33:21" itemprop="dateCreated datePublished" datetime="2021-08-11T16:00:00+08:00">2021-08-11</time>
+              <time title="Created: 2021-08-11 16:00:00 / Modified: 16:35:27" itemprop="dateCreated datePublished" datetime="2021-08-11T16:00:00+08:00">2021-08-11</time>
             </span>
 
           
@@ -187,7 +187,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="常用範例"><a href="#常用範例" class="headerlink" title="常用範例"></a>常用範例</h1><h2 id="IP相關統計"><a href="#IP相關統計" class="headerlink" title="IP相關統計"></a>IP相關統計</h2><h3 id="統計IP訪問量"><a href="#統計IP訪問量" class="headerlink" title="統計IP訪問量"></a>統計IP訪問量</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">awk ‘&#123;<span class="built_in">print</span> <span class="variable">$1</span>&#125;‘ access.log | sort -n | uniq | wc -l</span><br></pre></td></tr></table></figure>
+          <h1 id="常用範例"><a href="#常用範例" class="headerlink" title="常用範例"></a>常用範例</h1><h2 id="IP相關統計"><a href="#IP相關統計" class="headerlink" title="IP相關統計"></a>IP相關統計</h2><h3 id="統計IP訪問量"><a href="#統計IP訪問量" class="headerlink" title="統計IP訪問量"></a>統計IP訪問量</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">awk <span class="string">&#x27;&#123;print $1&#125;&#x27;</span> access.log | sort -n | uniq | wc -l</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/2021/08/11/log-commandline/#more" rel="contents">
