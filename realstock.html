@@ -515,8 +515,17 @@
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
         if (i > 0 && r.today !== null && r.value !== null) {
-          var prev = r.value - r.today;
-          if (prev > 0) growth *= (1 + r.today / prev);
+          // 計算基準 (分母)：前一日市值，加上當日「淨買進」投入的資金
+          //   淨資金流 = (今日市值 − 今日損益) − 前一日市值；正值=買進，負值=賣出
+          //   買進：視為開盤就投入 → 加進分母
+          //   賣出：視為收盤才取出 → 分母維持前一日市值 (避免只用剩餘部位當分母而把報酬放大)
+          var prevV = rows[i - 1].value;
+          var base = r.value - r.today;
+          if (prevV !== null && prevV > 0) {
+            var flow = base - prevV;
+            base = prevV + Math.max(0, flow);
+          }
+          if (base > 0) growth *= (1 + r.today / base);
         }
         out.push({
           d: r.d,
