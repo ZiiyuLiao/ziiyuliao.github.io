@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>即時持股看盤</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #0b0e14; color: #e2e8f0;
+      padding: 10px 10px 60px 10px;
+    }
+    .header-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px; padding: 0 4px;
+    }
+    .app-title { font-size: 19px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; }
+    .btn-refresh {
+      background: #1e2433; border: 1px solid #2e384d; color: #93c5fd;
+      font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 16px;
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+    }
+    .btn-refresh:active { background: #283248; }
+
+    /* 頁籤切換 */
+    .nav-tabs {
+      display: flex; background: #141721; padding: 3px; border-radius: 10px;
+      margin-bottom: 10px; border: 1px solid #1e2433;
+    }
+    .tab-btn {
+      flex: 1; text-align: center; padding: 8px 0; font-size: 14px; font-weight: 700;
+      color: #718096; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .tab-btn.active { background: #2563eb; color: #ffffff; box-shadow: 0 2px 6px rgba(37,99,235,0.4); }
+    .tab-badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; background: rgba(255,255,255,0.2); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* 大盤頂部區塊 */
+    .market-banner { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .market-card {
+      background: #141721; border: 1px solid #1e2433; border-radius: 10px; padding: 8px 10px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .market-title { font-size: 11px; color: #8e94a5; margin-bottom: 2px; }
+    .market-value { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+    .market-change { font-size: 11px; font-weight: 700; margin-top: 1px; }
+    .market-sparkline { width: 52px; height: 30px; }
+    .market-sparkline svg { width: 100%; height: 100%; overflow: visible; }
+
+    /* 帳戶總覽卡片 */
+    .port-card {
+      background: linear-gradient(135deg, #182032 0%, #10141f 100%);
+      border: 1px solid #232c42; border-radius: 12px; padding: 12px; margin-bottom: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .port-header { display: flex; justify-content: space-between; font-size: 11px; color: #94a3b8; margin-bottom: 2px; }
+    .port-pnl { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .pnl-duo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+    .duo-item { background: rgba(0,0,0,0.25); padding: 5px 8px; border-radius: 6px; }
+    .duo-label { font-size: 10px; color: #8e94a5; display: block; margin-bottom: 1px; }
+    .duo-val { font-size: 14px; font-weight: 800; }
+    .port-sub-grid { display: flex; justify-content: space-between; font-size: 11px; color: #8e94a5; border-top: 1px solid #1e2433; padding-top: 6px; }
+    .port-sub-grid b { color: #cbd5e1; margin-left: 3px; }
+
+    /* ★ 密集型持股卡片 ★ */
+    .dense-stock-card {
+      background: #141722; border: 1px solid #1e2536;
+      border-radius: 9px; padding: 8px 11px; margin-bottom: 5px;
+      display: flex; flex-direction: column; gap: 4px;
+      transition: background 0.15s ease;
+    }
+    .dense-stock-card:active { background: #1a2030; }
+    .d-row-main { display: flex; justify-content: space-between; align-items: center; }
+    .d-info-left { display: flex; align-items: baseline; gap: 7px; }
+    .d-stock-name { font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.2px; }
+    .d-stock-code {
+      font-size: 11px; font-weight: 600; color: #64748b; background: #0d1017;
+      padding: 1px 5px; border-radius: 4px;
+    }
+    .d-pnl-right { display: flex; align-items: center; gap: 7px; }
+    .d-pnl-amount { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+    .d-pnl-badge {
+      font-size: 13px; font-weight: 800; padding: 2px 7px; border-radius: 6px;
+      min-width: 66px; text-align: right; letter-spacing: -0.2px; display: inline-block;
+    }
+    .d-row-sub {
+      display: flex; align-items: center; font-size: 11px; color: #718096;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; gap: 5px;
+    }
+    .d-sub-left { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .d-sub-item b { color: #cbd5e1; font-weight: 600; }
+    .d-dot { color: #334155; font-size: 9px; }
+    .d-sub-rt {
+      display: flex; align-items: center; gap: 4px; font-size: 11px; color: #64748b;
+      margin-left: auto; flex-shrink: 0;
+    }
+    .d-rt-price { color: #94a3b8; font-weight: 600; }
+    .rt-text-up { color: #f87171; font-weight: 500; }
+    .rt-text-down { color: #4ade80; font-weight: 500; }
+    .rt-text-flat { color: #64748b; font-weight: 500; }
+
+    /* ★ 收益四段階梯色階 ★ */
+    /* 1. 15% 以上：深紅 */
+    .pnl-badge-deep-up {
+      background: #991b1b; color: #ffffff; border: 1px solid #ef4444;
+      box-shadow: 0 0 8px rgba(220, 38, 38, 0.45);
+    }
+    .text-deep-up { color: #ff4d4f; font-weight: 800; }
+
+    /* 2. 0% ~ 15%：淺紅 */
+    .pnl-badge-light-up {
+      background: rgba(239, 68, 68, 0.18); color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+    }
+    .text-light-up { color: #f87171; font-weight: 700; }
+
+    /* 3. 0% ~ -15%：淺綠 */
+    .pnl-badge-light-down {
+      background: rgba(34, 197, 94, 0.16); color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.45);
+    }
+    .text-light-down { color: #4ade80; font-weight: 700; }
+
+    /* 4. -15% 以下：深綠 */
+    .pnl-badge-deep-down {
+      background: #14532d; color: #ffffff; border: 1px solid #22c55e;
+      box-shadow: 0 0 8px rgba(22, 163, 74, 0.35);
+    }
+    .text-deep-down { color: #52c41a; font-weight: 800; }
+
+    /* 0. 平盤 0% */
+    .pnl-badge-flat {
+      background: rgba(148, 163, 184, 0.12); color: #94a3b8;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+    .text-flat { color: #94a3b8; }
+    .text-up { color: #ff5252; }
+    .text-down { color: #4caf50; }
+
+    /* 公司卡片與摺疊 */
+    .search-box {
+      margin-bottom: 8px; position: relative;
+    }
+    .search-input {
+      width: 100%; background: #141721; border: 1px solid #1e2433; border-radius: 8px;
+      padding: 8px 30px 8px 12px; color: #fff; font-size: 13px;
+    }
+    .search-input:focus { outline: none; border-color: #2563eb; }
+    .search-clear {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      color: #718096; font-size: 14px; cursor: pointer; display: none;
+    }
+    .accordion-controls {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px; padding: 0 2px;
+    }
+    .stats-hint { font-size: 11px; color: #718096; }
+    .ctrl-btns { display: flex; gap: 6px; }
+    .ctrl-btn {
+      font-size: 11px; background: #141721; border: 1px solid #1e2433; color: #93c5fd;
+      padding: 3px 8px; border-radius: 6px; cursor: pointer;
+    }
+    .comp-card {
+      background: #141721; border: 1px solid #1e2433;
+      border-radius: 10px; margin-bottom: 7px; overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .comp-card.expanded { border-color: #2e384d; }
+    .comp-header {
+      padding: 10px 12px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; background: #141721; user-select: none;
+    }
+    .comp-header:active { background: #181d2a; }
+    .comp-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .comp-name { font-size: 15px; font-weight: 800; color: #ffffff; }
+    .comp-code { font-size: 11px; color: #64748b; background: #0f121a; padding: 1px 5px; border-radius: 4px; }
+    .badge-action { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+    .act-buy { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .act-sell { background: rgba(34,197,94,0.2); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .act-hold { background: rgba(59,130,246,0.2); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+    .act-default { background: rgba(148,163,184,0.15); color: #cbd5e1; }
+    .comp-count { font-size: 10px; color: #64748b; background: #1a202c; padding: 1px 5px; border-radius: 10px; }
+    .comp-right { display: flex; align-items: center; gap: 8px; }
+    .comp-rt { display: flex; flex-direction: column; align-items: flex-end; }
+    .comp-price { font-size: 12px; font-weight: 800; color: #fff; }
+    .comp-rate { font-size: 10px; font-weight: 700; }
+    .comp-date { font-size: 11px; color: #64748b; font-family: monospace; }
+    .comp-arrow {
+      font-size: 11px; color: #64748b; transition: transform 0.25s ease;
+      display: inline-block; margin-left: 2px;
+    }
+    .comp-card.expanded .comp-arrow { transform: rotate(180deg); color: #93c5fd; }
+    .comp-body {
+      display: none; padding: 10px 12px 12px 12px; border-top: 1px solid #1a202c;
+      background: #0f121a;
+    }
+    .comp-card.expanded .comp-body { display: block; }
+    .report-timeline { position: relative; padding-left: 14px; }
+    .report-timeline::before {
+      content: ""; position: absolute; left: 4px; top: 6px; bottom: 6px;
+      width: 2px; background: #222938;
+    }
+    .report-node { position: relative; margin-bottom: 12px; }
+    .report-node:last-child { margin-bottom: 0; }
+    .node-dot {
+      position: absolute; left: -14px; top: 4px; width: 6px; height: 6px;
+      border-radius: 50%; background: #3b82f6; border: 2px solid #0f121a;
+    }
+    .report-card { background: #161b26; border-radius: 8px; padding: 8px 10px; border: 1px solid #1e2638; }
+    .rep-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; flex-wrap: wrap; gap: 4px; }
+    .rep-date-action { display: flex; align-items: center; gap: 6px; }
+    .rep-date { font-size: 11px; font-weight: 700; color: #cbd5e1; }
+    .rep-targets { display: flex; gap: 5px; font-size: 10px; flex-wrap: wrap; }
+    .rep-target-val { color: #f59e0b; background: rgba(245,158,11,0.12); padding: 1px 5px; border-radius: 4px; font-weight: 700; }
+    .rep-pos-val { color: #60a5fa; background: rgba(96,165,250,0.12); padding: 1px 5px; border-radius: 4px; }
+    .rep-price-val { color: #94a3b8; background: rgba(148,163,184,0.12); padding: 1px 5px; border-radius: 4px; }
+    .rep-summary { font-size: 12px; color: #94a3b8; line-height: 1.45; }
+    .empty-box { text-align: center; padding: 40px 10px; color: #64748b; font-size: 13px; }
+
+    /* ★ 今日損益列 ★ */
+    .today-row {
+      display: flex; align-items: baseline; justify-content: space-between;
+      background: rgba(0,0,0,0.25); padding: 6px 8px; border-radius: 6px; margin-bottom: 8px;
+    }
+    .today-label { font-size: 11px; color: #8e94a5; }
+    .today-val { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+    .today-rate { font-size: 12px; font-weight: 700; margin-left: 6px; }
+    .today-note { font-size: 10px; color: #64748b; margin-top: -4px; margin-bottom: 8px; padding: 0 2px; }
+
+    /* ★ 持股卡片第三列：今日損益 + 權重 ★ */
+    .d-row-today { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #718096; gap: 8px; }
+    .d-today b { font-weight: 700; }
+    .d-weight { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .d-weight-bar { width: 44px; height: 4px; background: #1e2433; border-radius: 2px; overflow: hidden; }
+    .d-weight-fill { height: 100%; background: #3b82f6; border-radius: 2px; }
+    .d-weight b { color: #cbd5e1; font-weight: 600; min-width: 38px; text-align: right; display: inline-block; }
+
+    /* ★ 排序切換列 ★ */
+    .sort-bar { display: flex; gap: 5px; margin-bottom: 7px; overflow-x: auto; padding-bottom: 2px; }
+    .sort-bar::-webkit-scrollbar { display: none; }
+    .sort-chip {
+      flex-shrink: 0; font-size: 11px; font-weight: 600; color: #94a3b8; background: #141721;
+      border: 1px solid #1e2433; padding: 4px 9px; border-radius: 14px; cursor: pointer; white-space: nowrap;
+    }
+    .sort-chip.active { color: #ffffff; background: #1e3a8a; border-color: #2563eb; }
+
+    /* ★ 績效頁籤 ★ */
+    .range-bar { display: flex; gap: 5px; margin-bottom: 8px; }
+    .range-chip {
+      flex: 1; text-align: center; font-size: 12px; font-weight: 700; color: #94a3b8; background: #141721;
+      border: 1px solid #1e2433; padding: 5px 0; border-radius: 8px; cursor: pointer;
+    }
+    .range-chip.active { color: #ffffff; background: #2563eb; border-color: #2563eb; }
+    .perf-tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .perf-tile { background: #141721; border: 1px solid #1e2433; border-radius: 9px; padding: 7px 8px; }
+    .perf-tile-label { font-size: 10px; color: #8e94a5; display: flex; align-items: center; gap: 4px; }
+    .perf-tile-val { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; margin-top: 2px; }
+    .swatch { display: inline-block; width: 10px; height: 3px; border-radius: 2px; }
+    .perf-chart-card { background: #141721; border: 1px solid #1e2433; border-radius: 10px; padding: 8px 6px 4px 6px; margin-bottom: 8px; position: relative; }
+    .perf-chart-card svg { display: block; width: 100%; touch-action: pan-y; }
+    .perf-legend { display: flex; gap: 12px; font-size: 11px; color: #94a3b8; padding: 0 4px 6px 4px; }
+    .perf-legend span { display: flex; align-items: center; gap: 5px; }
+    .perf-tip {
+      position: absolute; pointer-events: none; background: #0b0e14; border: 1px solid #2e384d; border-radius: 6px;
+      padding: 5px 7px; font-size: 11px; color: #e2e8f0; display: none; white-space: nowrap; z-index: 2;
+    }
+    .perf-tip .tip-date { color: #94a3b8; margin-bottom: 2px; }
+    .perf-table { width: 100%; border-collapse: collapse; font-size: 11px; background: #141721; border-radius: 10px; overflow: hidden; }
+    .perf-table th { text-align: right; color: #8e94a5; font-weight: 600; padding: 6px 8px; border-bottom: 1px solid #1e2433; }
+    .perf-table td { text-align: right; padding: 5px 8px; color: #cbd5e1; border-bottom: 1px solid #161b26; font-variant-numeric: tabular-nums; }
+    .perf-table th:first-child, .perf-table td:first-child { text-align: left; }
+    .perf-section-title { font-size: 12px; color: #94a3b8; font-weight: 700; margin: 10px 2px 6px 2px; }
+  </style>
+</head>
+<body>
+
+  <div class="header-bar">
+    <div class="app-title">📊 即時持股看盤</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button id="btn-refresh" class="btn-refresh" onclick="fetchLatestData(true)">
+        <span id="btn-icon">🔄</span> <span id="time-label">讀取中</span>
+      </button>
+      <button id="btn-settings" class="btn-refresh" style="display:none" onclick="openSettings()" aria-label="連線設定">⚙️</button>
+    </div>
+  </div>
+
+  <!-- 獨立網頁版：連線設定 -->
+  <div id="settings-box" class="port-card" style="display:none">
+    <div class="port-header" style="margin-bottom:8px"><span>連線設定 (只會存在這台裝置)</span></div>
+    <input id="cfg-url" class="search-input" style="margin-bottom:6px" placeholder="Web App 網址 (https://script.google.com/macros/s/.../exec)">
+    <input id="cfg-token" class="search-input" style="margin-bottom:8px" placeholder="存取權杖 WEBAPP_TOKEN">
+    <div style="display:flex;gap:6px;justify-content:flex-end">
+      <button class="ctrl-btn" onclick="closeSettings()">取消</button>
+      <button class="ctrl-btn" style="color:#fff;background:#2563eb;border-color:#2563eb" onclick="saveSettings()">儲存並連線</button>
+    </div>
+    <div id="cfg-msg" class="today-note" style="margin-top:6px"></div>
+  </div>
+
+  <div class="nav-tabs">
+    <div id="btn-tab-holdings" class="tab-btn active" onclick="switchTab('holdings')">我的持股</div>
+    <div id="btn-tab-news" class="tab-btn" onclick="switchTab('news')">
+      <span>財報動態</span> <span id="news-badge" class="tab-badge">0</span>
+    </div>
+    <div id="btn-tab-perf" class="tab-btn" onclick="switchTab('perf')">績效</div>
+  </div>
+
+  <!-- 持股頁籤 (極致密集、凸顯收益、可切換排序) -->
+  <div id="tab-holdings" class="tab-content active">
+    <div id="market-banner" class="market-banner"></div>
+    <div id="port-summary" class="port-card"></div>
+    <div id="sort-bar" class="sort-bar"></div>
+    <div id="stock-list"></div>
+  </div>
+
+  <!-- 績效頁籤 (我的報酬 vs 大盤) -->
+  <div id="tab-perf" class="tab-content">
+    <div id="range-bar" class="range-bar"></div>
+    <div id="perf-tiles" class="perf-tiles"></div>
+    <div class="perf-chart-card">
+      <div class="perf-legend">
+        <span><i class="swatch" style="background:#3b82f6"></i>我的報酬</span>
+        <span><i class="swatch" style="background:#d97706"></i>加權指數</span>
+      </div>
+      <div id="perf-chart"></div>
+      <div id="perf-tip" class="perf-tip"></div>
+    </div>
+    <div class="perf-section-title">最近交易日</div>
+    <div id="perf-table"></div>
+  </div>
+
+  <!-- 財報動態頁籤 (記住展開收合狀態) -->
+  <div id="tab-news" class="tab-content">
+    <div class="search-box">
+      <input type="text" id="comp-search" class="search-input" placeholder="🔍 搜尋代號、公司名、操作評等..." oninput="onSearchCompany(this.value)">
+      <span id="search-clear" class="search-clear" onclick="clearSearch()">✕</span>
+    </div>
+    <div class="accordion-controls">
+      <span id="news-stats" class="stats-hint">載入中...</span>
+      <div class="ctrl-btns">
+        <button class="ctrl-btn" onclick="toggleAllCompanies(true)">全部展開</button>
+        <button class="ctrl-btn" onclick="toggleAllCompanies(false)">全部收合</button>
+      </div>
+    </div>
+    <div id="news-list"></div>
+  </div>
+
+  <script>
+    var currentData = null;
+
+    /* HTML 跳脫：所有來自試算表的文字插入 innerHTML 前都經過此函式 */
+    function esc(v) {
+      if (v === undefined || v === null) return "";
+      return String(v)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    /* ★ 狀態持久化：記住公司展開收合狀態 ★ */
+    var expandedCompanyKeys = {};
+    try {
+      var savedExp = localStorage.getItem("APP_EXPANDED_COMPANIES");
+      if (savedExp) expandedCompanyKeys = JSON.parse(savedExp);
+    } catch (e) {}
+
+    function lsGet(k, def) { try { var v = localStorage.getItem(k); return v === null ? def : v; } catch (e) { return def; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+    var currentTab = "holdings";
+    function switchTab(name) {
+      currentTab = name;
+      ["holdings", "news", "perf"].forEach(function(t) {
+        document.getElementById("btn-tab-" + t).className = name === t ? "tab-btn active" : "tab-btn";
+        document.getElementById("tab-" + t).className = name === t ? "tab-content active" : "tab-content";
+      });
+      if (name === "perf") renderPerf(currentData);
+    }
+
+    /* ★ 持股排序 (記住上次選擇) ★ */
+    var SORT_OPTIONS = [
+      { key: "cost",      label: "成本" },
+      { key: "todayRate", label: "今日漲跌" },
+      { key: "todayPnl",  label: "今日損益" },
+      { key: "pnlRate",   label: "損益率" },
+      { key: "weight",    label: "權重" }
+    ];
+    var sortKey = lsGet("APP_SORT_KEY", "cost");
+    var sortDesc = lsGet("APP_SORT_DESC", "1") === "1";
+
+    function setSort(key) {
+      if (key === sortKey) sortDesc = !sortDesc;   // 再點一次切換升降冪
+      else { sortKey = key; sortDesc = true; }
+      lsSet("APP_SORT_KEY", sortKey);
+      lsSet("APP_SORT_DESC", sortDesc ? "1" : "0");
+      renderStocks(currentData);
+    }
+
+    function sortValue(s, key) {
+      switch (key) {
+        case "todayRate": return s.todayRateNum;
+        case "todayPnl":  return s.todayPnlNum;
+        case "pnlRate":   return s.pnlRateNum;
+        case "weight":    return s.weightNum;
+        default:          return typeof s.costNum === "number" ? s.costNum : (parseFloat(String(s.cost).replace(/[^0-9.-]/g, "")) || 0);
+      }
+    }
+
+    function renderSortBar() {
+      var html = "";
+      SORT_OPTIONS.forEach(function(o) {
+        var active = o.key === sortKey;
+        html += '<div class="sort-chip' + (active ? " active" : "") + '" onclick="setSort(&quot;' + o.key + '&quot;)">' +
+          o.label + (active ? (sortDesc ? " ↓" : " ↑") : "") + '</div>';
+      });
+      document.getElementById("sort-bar").innerHTML = html;
+    }
+
+    function colorClass(isUp, isDown) { return isUp ? "text-up" : (isDown ? "text-down" : "text-flat"); }
+
+    function renderStocks(data) {
+      renderSortBar();
+      var sl = document.getElementById("stock-list");
+      var sHtml = "";
+      var sortedStocks = ((data && data.stocks) || []).slice().sort(function(a, b) {
+        var va = sortValue(a, sortKey), vb = sortValue(b, sortKey);
+        var na = (va === null || va === undefined || isNaN(va)), nb = (vb === null || vb === undefined || isNaN(vb));
+        if (na && nb) return 0;
+        if (na) return 1;   // 無資料一律排最後
+        if (nb) return -1;
+        return sortDesc ? vb - va : va - vb;
+      });
+      var maxWeight = 0;
+      sortedStocks.forEach(function(s) { if (s.weightNum > maxWeight) maxWeight = s.weightNum; });
+
+      sortedStocks.forEach(function(s) {
+        var pnlTier = getPnlTier(s.pnlRate);
+        var rtTxtClass = s.isUp ? "rt-text-up" : (s.isDown ? "rt-text-down" : "rt-text-flat");
+        var tClass = colorClass(s.isTodayUp, s.isTodayDown);
+        var wPct = maxWeight > 0 ? Math.max(2, s.weightNum / maxWeight * 100) : 0;
+        sHtml += '<div class="dense-stock-card">' +
+          '<div class="d-row-main">' +
+            '<div class="d-info-left">' +
+              '<span class="d-stock-name">' + esc(s.name) + '</span>' +
+              '<span class="d-stock-code">' + esc(s.code) + '</span>' +
+            '</div>' +
+            '<div class="d-pnl-right">' +
+              '<span class="d-pnl-amount ' + pnlTier.textClass + '">' + esc(s.pnlFormatted) + '</span>' +
+              '<span class="d-pnl-badge ' + pnlTier.badgeClass + '">' + esc(s.pnlRate) + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="d-row-sub">' +
+            '<div class="d-sub-left">' +
+              '<span class="d-sub-item">庫存 <b>' + esc(s.shares) + '</b></span>' +
+              '<span class="d-dot">•</span>' +
+              '<span class="d-sub-item">均價 <b>' + esc(s.avgPrice) + '</b></span>' +
+              '<span class="d-dot">•</span>' +
+              '<span class="d-sub-item">成本 <b>' + esc(s.cost) + '</b></span>' +
+            '</div>' +
+            '<div class="d-sub-rt">' +
+              '<span>現價 <span class="d-rt-price">' + esc(s.price) + '</span></span>' +
+              '<span class="d-rt-rate ' + rtTxtClass + '">(' + esc(s.rateText) + ')</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="d-row-today">' +
+            '<span class="d-today">今日損益 <b class="' + tClass + '">' + esc(s.todayPnlText || "-") + '</b></span>' +
+            '<span class="d-weight">權重 <span class="d-weight-bar"><span class="d-weight-fill" style="display:block;width:' + wPct.toFixed(0) + '%"></span></span><b>' + esc(s.weightText || "-") + '</b></span>' +
+          '</div>' +
+        '</div>';
+      });
+      sl.innerHTML = sHtml || '<div class="empty-box">試算表「持股」目前沒有資料</div>';
+    }
+
+    /* ★ 績效：我的報酬 vs 加權指數 ★ */
+    var RANGE_OPTIONS = [
+      { key: "1M", label: "1月", days: 31 },
+      { key: "3M", label: "3月", days: 92 },
+      { key: "6M", label: "6月", days: 183 },
+      { key: "1Y", label: "1年", days: 366 },
+      { key: "ALL", label: "全部", days: 0 }
+    ];
+    var perfRange = lsGet("APP_PERF_RANGE", "3M");
+
+    function setPerfRange(key) {
+      perfRange = key;
+      lsSet("APP_PERF_RANGE", key);
+      renderPerf(currentData);
+    }
+
+    function parseYmd(s) {
+      var m = String(s || "").match(/(\d{4})\D(\d{1,2})\D(\d{1,2})/);
+      return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+    }
+
+    function fmtPct(v) {
+      if (v === null || v === undefined || isNaN(v)) return "-";
+      return (v > 0 ? "+" : "") + v.toFixed(2) + "%";
+    }
+    function fmtMoney(v) {
+      if (v === null || v === undefined || isNaN(v)) return "-";
+      return (v > 0 ? "+" : (v < 0 ? "-" : "")) + Math.abs(Math.round(v)).toLocaleString();
+    }
+
+    /* 以「今日損益 / 前日市值」逐日串接 (時間加權報酬，不受加減碼資金進出影響)；大盤以區間首日收盤為基準 */
+    function computePerfSeries(rows) {
+      var out = [];
+      if (!rows || rows.length === 0) return out;
+      var growth = 1, ix0 = null;
+      for (var z = 0; z < rows.length; z++) { if (rows[z].ix) { ix0 = rows[z].ix; break; } }
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        if (i > 0 && r.today !== null && r.value !== null) {
+          var prev = r.value - r.today;
+          if (prev > 0) growth *= (1 + r.today / prev);
+        }
+        out.push({
+          d: r.d,
+          mine: (growth - 1) * 100,
+          ix: (ix0 && r.ix) ? (r.ix / ix0 - 1) * 100 : null,
+          value: r.value, today: r.today, cum: r.cum
+        });
+      }
+      return out;
+    }
+
+    var perfPoints = [];
+    function renderPerf(data) {
+      var rb = "";
+      RANGE_OPTIONS.forEach(function(o) {
+        rb += '<div class="range-chip' + (o.key === perfRange ? " active" : "") + '" onclick="setPerfRange(&quot;' + o.key + '&quot;)">' + o.label + '</div>';
+      });
+      document.getElementById("range-bar").innerHTML = rb;
+
+      var all = (data && data.equity) || [];
+      var chartEl = document.getElementById("perf-chart");
+      var tilesEl = document.getElementById("perf-tiles");
+      var tableEl = document.getElementById("perf-table");
+      if (all.length < 2) {
+        tilesEl.innerHTML = "";
+        chartEl.innerHTML = '<div class="empty-box">每個交易日 23:00 會自動記錄一筆資產快照，<br>累積 2 天以上就會顯示績效曲線。<br>(也可從試算表選單「記錄今日資產快照」手動記錄)</div>';
+        tableEl.innerHTML = "";
+        return;
+      }
+
+      // 依區間篩選
+      var opt = RANGE_OPTIONS.filter(function(o) { return o.key === perfRange; })[0] || RANGE_OPTIONS[1];
+      var rows = all;
+      if (opt.days > 0) {
+        var lastDate = parseYmd(all[all.length - 1].d);
+        var cutoff = new Date(lastDate.getTime() - opt.days * 86400000);
+        var startIdx = 0;
+        for (var i = 0; i < all.length; i++) { var dt = parseYmd(all[i].d); if (dt && dt >= cutoff) { startIdx = i; break; } }
+        rows = all.slice(Math.max(0, startIdx - 1)); // 多取前一日作為基準
+      }
+      perfPoints = computePerfSeries(rows);
+      var last = perfPoints[perfPoints.length - 1];
+      var excess = (last.ix === null) ? null : last.mine - last.ix;
+
+      tilesEl.innerHTML =
+        '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch" style="background:#3b82f6"></i>我的報酬</div><div class="perf-tile-val ' + colorClass(last.mine > 0, last.mine < 0) + '">' + fmtPct(last.mine) + '</div></div>' +
+        '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch" style="background:#d97706"></i>加權指數</div><div class="perf-tile-val ' + colorClass(last.ix > 0, last.ix < 0) + '">' + fmtPct(last.ix) + '</div></div>' +
+        '<div class="perf-tile"><div class="perf-tile-label">超額報酬</div><div class="perf-tile-val ' + colorClass(excess > 0, excess < 0) + '">' + fmtPct(excess) + '</div></div>';
+
+      drawPerfChart(chartEl, perfPoints);
+
+      // 表格檢視 (最近 10 個交易日)
+      var recent = perfPoints.slice(-10).reverse();
+      var tHtml = '<table class="perf-table"><thead><tr><th>日期</th><th>總市值</th><th>當日損益</th><th>累計損益</th></tr></thead><tbody>';
+      recent.forEach(function(p) {
+        tHtml += '<tr><td>' + esc(String(p.d).slice(5)) + '</td><td>' + (p.value !== null ? Math.round(p.value).toLocaleString() : "-") + '</td>' +
+          '<td class="' + colorClass(p.today > 0, p.today < 0) + '">' + fmtMoney(p.today) + '</td>' +
+          '<td class="' + colorClass(p.cum > 0, p.cum < 0) + '">' + fmtMoney(p.cum) + '</td></tr>';
+      });
+      tableEl.innerHTML = tHtml + '</tbody></table>';
+    }
+
+    function drawPerfChart(el, pts) {
+      var W = Math.max(280, el.clientWidth || 340), H = 200;
+      var padL = 40, padR = 10, padT = 10, padB = 22;
+      var vals = [];
+      pts.forEach(function(p) { vals.push(p.mine); if (p.ix !== null) vals.push(p.ix); });
+      var yMin = Math.min.apply(null, vals.concat([0])), yMax = Math.max.apply(null, vals.concat([0]));
+      var span = (yMax - yMin) || 1;
+      yMin -= span * 0.08; yMax += span * 0.08;
+      var n = pts.length;
+      var x = function(i) { return padL + (n === 1 ? 0 : i / (n - 1)) * (W - padL - padR); };
+      var y = function(v) { return padT + (1 - (v - yMin) / (yMax - yMin)) * (H - padT - padB); };
+
+      // 格線與 Y 軸刻度 (4 條)
+      var g = "";
+      for (var k = 0; k <= 3; k++) {
+        var v = yMin + (yMax - yMin) * k / 3;
+        g += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" stroke="#1e2433" stroke-width="1"/>' +
+             '<text x="' + (padL - 5) + '" y="' + (y(v) + 3).toFixed(1) + '" fill="#64748b" font-size="10" text-anchor="end">' + v.toFixed(1) + '%</text>';
+      }
+      // 0% 基準線
+      g += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '" stroke="#475569" stroke-width="1" stroke-dasharray="3,3"/>';
+      // X 軸起訖日期
+      g += '<text x="' + padL + '" y="' + (H - 6) + '" fill="#64748b" font-size="10">' + esc(pts[0].d) + '</text>' +
+           '<text x="' + (W - padR) + '" y="' + (H - 6) + '" fill="#64748b" font-size="10" text-anchor="end">' + esc(pts[n - 1].d) + '</text>';
+
+      var lineOf = function(key) {
+        var d = "", pen = false;
+        pts.forEach(function(p, i) {
+          var v = p[key];
+          if (v === null || v === undefined || isNaN(v)) { pen = false; return; }
+          d += (pen ? "L" : "M") + x(i).toFixed(1) + "," + y(v).toFixed(1);
+          pen = true;
+        });
+        return d;
+      };
+      var ixPath = '<path d="' + lineOf("ix") + '" fill="none" stroke="#d97706" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      var myPath = '<path d="' + lineOf("mine") + '" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      var cross = '<g id="perf-cross" style="display:none"><line id="pc-line" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#64748b" stroke-width="1"/>' +
+        '<circle id="pc-a" r="4" fill="#3b82f6" stroke="#141721" stroke-width="2"/><circle id="pc-b" r="4" fill="#d97706" stroke="#141721" stroke-width="2"/></g>';
+
+      el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="我的報酬與加權指數報酬比較">' + g + ixPath + myPath + cross +
+        '<rect id="perf-hit" x="' + padL + '" y="0" width="' + (W - padL - padR) + '" height="' + H + '" fill="transparent"/></svg>';
+
+      // 十字線 + 提示框
+      var svg = el.querySelector("svg"), hit = el.querySelector("#perf-hit"), tip = document.getElementById("perf-tip");
+      var crossG = el.querySelector("#perf-cross");
+      var move = function(evt) {
+        var rect = svg.getBoundingClientRect();
+        var cx = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
+        var sx = cx * (W / rect.width);
+        var i = Math.round((sx - padL) / (W - padL - padR) * (n - 1));
+        i = Math.max(0, Math.min(n - 1, i));
+        var p = pts[i];
+        crossG.style.display = "";
+        el.querySelector("#pc-line").setAttribute("x1", x(i)); el.querySelector("#pc-line").setAttribute("x2", x(i));
+        el.querySelector("#pc-a").setAttribute("cx", x(i)); el.querySelector("#pc-a").setAttribute("cy", y(p.mine));
+        var b = el.querySelector("#pc-b");
+        if (p.ix !== null) { b.style.display = ""; b.setAttribute("cx", x(i)); b.setAttribute("cy", y(p.ix)); } else { b.style.display = "none"; }
+        tip.innerHTML = '<div class="tip-date">' + esc(p.d) + '</div>' +
+          '<div><i class="swatch" style="background:#3b82f6"></i> 我的 ' + fmtPct(p.mine) + '</div>' +
+          '<div><i class="swatch" style="background:#d97706"></i> 大盤 ' + fmtPct(p.ix) + '</div>' +
+          '<div style="color:#94a3b8">當日損益 ' + fmtMoney(p.today) + '</div>';
+        tip.style.display = "block";
+        var px = x(i) * (rect.width / W);
+        var tw = tip.offsetWidth;
+        tip.style.left = Math.max(4, Math.min(rect.width - tw - 4, px + 12)) + "px";
+        tip.style.top = "30px";
+      };
+      var leave = function() { crossG.style.display = "none"; tip.style.display = "none"; };
+      hit.addEventListener("mousemove", move);
+      hit.addEventListener("touchstart", move, { passive: true });
+      hit.addEventListener("touchmove", move, { passive: true });
+      hit.addEventListener("mouseleave", leave);
+      hit.addEventListener("touchend", function() { setTimeout(leave, 1500); });
+    }
+
+    window.addEventListener("resize", function() { if (currentTab === "perf") renderPerf(currentData); });
+
+    function renderSparkline(trend, refPrice, isUp, isDown) {
+      if (!trend || trend.length < 2) return "";
+      var prices = trend.map(function(p){ return parseFloat(p); }).filter(function(p){ return !isNaN(p) && p > 0; });
+      if (prices.length < 2) return "";
+      var ref = parseFloat(refPrice) || prices[0];
+      var maxP = Math.max.apply(null, prices);
+      var minP = Math.min.apply(null, prices);
+      var diff = Math.max(Math.abs(maxP - ref), Math.abs(minP - ref));
+      if (diff === 0) diff = ref * 0.005;
+      var yMin = ref - diff, yMax = ref + diff;
+      var w = 100, h = 36;
+      var strokeColor = isUp ? "#ff5252" : (isDown ? "#4caf50" : "#94a3b8");
+      var refY = h - ((ref - yMin) / (yMax - yMin) * h);
+      var pts = [];
+      for (var i = 0; i < prices.length; i++) {
+        var x = (i / (prices.length - 1)) * w;
+        var y = h - ((prices[i] - yMin) / (yMax - yMin) * h);
+        pts.push(x.toFixed(1) + "," + y.toFixed(1));
+      }
+      return '<svg viewBox="0 0 ' + w + ' ' + h + '"><line x1="0" y1="' + refY.toFixed(1) + '" x2="' + w + '" y2="' + refY.toFixed(1) + '" stroke="#374151" stroke-dasharray="2,2" stroke-width="1"/><polyline fill="none" stroke="' + strokeColor + '" stroke-width="2" points="' + pts.join(" ") + '"/></svg>';
+    }
+
+    /* ★ 收益四段階梯色階判定 ★ */
+    function getPnlTier(pnlRateStr) {
+      if (!pnlRateStr || pnlRateStr === "-") {
+        return { badgeClass: "pnl-badge-flat", textClass: "text-flat" };
+      }
+      var s = String(pnlRateStr).replace(/[%+,\s]/g, "");
+      var num = parseFloat(s);
+      if (isNaN(num) || num === 0) {
+        return { badgeClass: "pnl-badge-flat", textClass: "text-flat" };
+      }
+      if (num >= 15.0) {
+        return { badgeClass: "pnl-badge-deep-up", textClass: "text-deep-up" };
+      } else if (num > 0) {
+        return { badgeClass: "pnl-badge-light-up", textClass: "text-light-up" };
+      } else if (num > -15.0) {
+        return { badgeClass: "pnl-badge-light-down", textClass: "text-light-down" };
+      } else {
+        return { badgeClass: "pnl-badge-deep-down", textClass: "text-deep-down" };
+      }
+    }
+
+    function getActionClass(action) {
+      if (!action) return "act-default";
+      if (action.indexOf("買") !== -1 || action.indexOf("加碼") !== -1) return "act-buy";
+      if (action.indexOf("續抱") !== -1) return "act-hold";
+      if (action.indexOf("賣") !== -1 || action.indexOf("減碼") !== -1) return "act-sell";
+      return "act-default";
+    }
+
+    /* ★ 展開/收合卡片 (支援傳入元素 this) ★ */
+    function toggleCompany(el) {
+      var card = (el && el.closest) ? el.closest(".comp-card") : (document.getElementById("comp-card-" + el) || el);
+      if (!card) return;
+      var key = card.getAttribute("data-comp-key") || card.id.replace("comp-card-", "");
+      if (card.classList.contains("expanded")) {
+        card.classList.remove("expanded");
+        if (key) delete expandedCompanyKeys[key];
+      } else {
+        card.classList.add("expanded");
+        if (key) expandedCompanyKeys[key] = true;
+      }
+      try {
+        localStorage.setItem("APP_EXPANDED_COMPANIES", JSON.stringify(expandedCompanyKeys));
+      } catch (e) {}
+    }
+
+    function toggleAllCompanies(expand) {
+      var cards = document.querySelectorAll(".comp-card");
+      cards.forEach(function(card) {
+        var k = card.getAttribute("data-comp-key");
+        if (expand) {
+          card.classList.add("expanded");
+          if (k) expandedCompanyKeys[k] = true;
+        } else {
+          card.classList.remove("expanded");
+          if (k) delete expandedCompanyKeys[k];
+        }
+      });
+      try {
+        localStorage.setItem("APP_EXPANDED_COMPANIES", JSON.stringify(expandedCompanyKeys));
+      } catch (e) {}
+    }
+
+    function onSearchCompany(query) {
+      var q = (query || "").trim().toLowerCase();
+      var clearBtn = document.getElementById("search-clear");
+      if (clearBtn) clearBtn.style.display = q ? "block" : "none";
+      var cards = document.querySelectorAll(".comp-card");
+      var visibleCount = 0;
+      cards.forEach(function(card) {
+        var kw = card.getAttribute("data-keywords") || "";
+        if (!q || kw.indexOf(q) !== -1) {
+          card.style.display = "block";
+          visibleCount++;
+        } else {
+          card.style.display = "none";
+        }
+      });
+      var nStats = document.getElementById("news-stats");
+      if (nStats) {
+        nStats.innerText = q ? ("搜尋「" + q + "」找到 " + visibleCount + " 家公司") : ("共 " + cards.length + " 家公司");
+      }
+    }
+
+    function clearSearch() {
+      var input = document.getElementById("comp-search");
+      if (input) { input.value = ""; onSearchCompany(""); }
+    }
+
+    function renderUI(data) {
+      if (!data) return;
+      document.getElementById("btn-icon").innerText = "🔄";
+      document.getElementById("time-label").innerText = data.updateTime || "";
+
+      var p = data.portfolio || {};
+      var uPnlClass = p.isProfit ? "text-up" : (p.isLoss ? "text-down" : "text-flat");
+      var cPnlClass = p.isCombinedProfit ? "text-up" : (p.isCombinedLoss ? "text-down" : "text-flat");
+      var rNum = parseFloat(String(p.realizedPnl || 0).replace(/,/g,"")) || 0;
+      var rPnlClass = rNum > 0 ? "text-up" : (rNum < 0 ? "text-down" : "text-flat");
+
+      document.getElementById("port-summary").innerHTML = 
+        '<div class="port-header"><span>持股未結損益 (未實現)</span><span>' + esc(p.unrealizedRate || "0%") + '</span></div>' +
+        '<div class="port-pnl ' + uPnlClass + '">' + esc(p.unrealizedPnl || "0") + '</div>' +
+        '<div class="today-row"><span class="today-label">今日損益</span><span><span class="today-val ' + colorClass(p.isTodayProfit, p.isTodayLoss) + '">$' + esc(p.todayPnl || "0") + '</span>' +
+          '<span class="today-rate ' + colorClass(p.isTodayProfit, p.isTodayLoss) + '">' + esc(p.todayRate || "") + '</span></span></div>' +
+        (p.todayQuoteMissing > 0 ? '<div class="today-note">※ ' + p.todayQuoteMissing + ' 檔不在 list 清單，未計入今日損益</div>' : '') +
+        '<div class="pnl-duo-grid">' +
+          '<div class="duo-item"><span class="duo-label">已實現損益</span><span class="duo-val ' + rPnlClass + '">$' + esc(p.realizedPnl || "0") + '</span></div>' +
+          '<div class="duo-item"><span class="duo-label">總累計損益(未結+已實現)</span><span class="duo-val ' + cPnlClass + '">$' + esc(p.totalCombinedPnl || "0") + '</span></div>' +
+        '</div>' +
+        '<div class="port-sub-grid"><span>總成本:<b>$' + esc(p.totalCost || "0") + '</b></span><span>總現值:<b>$' + esc(p.totalValue || "0") + '</b></span></div>';
+
+      var mb = document.getElementById("market-banner");
+      var mHtml = "";
+      if (data.market && data.market.twse) {
+        var m1 = data.market.twse;
+        var c1 = m1.isUp ? "text-up" : (m1.isDown ? "text-down" : "text-flat");
+        mHtml += '<div class="market-card"><div><div class="market-title">加權指數</div><div class="market-value ' + c1 + '">' + esc(m1.price) + '</div><div class="market-change ' + c1 + '">' + esc(m1.highLow) + ' (' + esc(m1.rate) + ')</div></div><div class="market-sparkline">' + renderSparkline(m1.trend, m1.refPrice, m1.isUp, m1.isDown) + '</div></div>';
+      }
+      if (data.market && data.market.tpex) {
+        var m2 = data.market.tpex;
+        var c2 = m2.isUp ? "text-up" : (m2.isDown ? "text-down" : "text-flat");
+        mHtml += '<div class="market-card"><div><div class="market-title">櫃買指數</div><div class="market-value ' + c2 + '">' + esc(m2.price) + '</div><div class="market-change ' + c2 + '">' + esc(m2.highLow) + ' (' + esc(m2.rate) + ')</div></div><div class="market-sparkline">' + renderSparkline(m2.trend, m2.refPrice, m2.isUp, m2.isDown) + '</div></div>';
+      }
+      mb.innerHTML = mHtml;
+
+      /* ★ 持股清單 (可切換排序) ★ */
+      renderStocks(data);
+      if (currentTab === "perf") renderPerf(data);
+
+      /* ★ 渲染公司手風琴清單（保持展開收合狀態）★ */
+      var nl = document.getElementById("news-list");
+      var nBadge = document.getElementById("news-badge");
+      var nStats = document.getElementById("news-stats");
+      var comps = data.companies || [];
+      if (comps.length > 0) {
+        nBadge.innerText = comps.length + "家";
+        var totalReps = 0;
+        var cHtml = "";
+        var hasSavedState = Object.keys(expandedCompanyKeys).length > 0;
+        comps.forEach(function(c, idx) {
+          totalReps += c.count || 0;
+          var compKey = String(c.code || c.name || idx).replace(/[^0-9A-Za-z一-龥_-]/g, "");
+          var isExpanded = hasSavedState ? !!expandedCompanyKeys[compKey] : (idx === 0);
+          if (!hasSavedState && idx === 0) {
+            expandedCompanyKeys[compKey] = true;
+          }
+          var expClass = isExpanded ? " expanded" : "";
+          var actClass = getActionClass(c.latestAction);
+          var rtBlock = "";
+          if (c.rtPrice) {
+            var rClass = c.isUp ? "text-up" : (c.isDown ? "text-down" : "text-flat");
+            rtBlock = '<div class="comp-rt"><span class="comp-price">$' + esc(c.rtPrice) + '</span><span class="comp-rate ' + rClass + '">' + esc(c.rtRate || "") + '</span></div>';
+          }
+          var timelineHtml = "";
+          (c.reports || []).forEach(function(rep) {
+            var rActClass = getActionClass(rep.action);
+            var targetSpan = (rep.target && rep.target !== "－") ? '<span class="rep-target-val">🎯 目標: ' + esc(rep.target) + '</span>' : "";
+            var posSpan = (rep.position && rep.position !== "－") ? '<span class="rep-pos-val">💼 建議: ' + esc(rep.position) + '</span>' : "";
+            var priceSpan = (rep.price && rep.price !== "－") ? '<span class="rep-price-val">🏷️ 市價: ' + esc(rep.price) + '</span>' : "";
+            var summaryBox = rep.summary ? '<div class="rep-summary">' + esc(rep.summary) + '</div>' : "";
+            timelineHtml += '<div class="report-node"><div class="node-dot"></div><div class="report-card"><div class="rep-header"><div class="rep-date-action"><span class="rep-date">' + esc(rep.date || "") + '</span>' + (rep.action ? '<span class="badge-action ' + rActClass + '">' + esc(rep.action) + '</span>' : "") + '</div><div class="rep-targets">' + targetSpan + posSpan + priceSpan + '</div></div>' + summaryBox + '</div></div>';
+          });
+          var kw = (c.code + " " + c.name + " " + c.latestAction + " " + (c.reports ? c.reports.map(function(r){ return r.summary; }).join(" ") : "")).toLowerCase();
+          cHtml += '<div class="comp-card' + expClass + '" id="comp-card-' + compKey + '" data-comp-key="' + compKey + '" data-keywords="' + esc(kw) + '"><div class="comp-header" onclick="toggleCompany(this)"><div class="comp-left">' + (c.code ? '<span class="comp-code">' + esc(c.code) + '</span>' : "") + '<span class="comp-name">' + esc(c.name) + '</span>' + (c.latestAction && c.latestAction !== "-" ? '<span class="badge-action ' + actClass + '">' + esc(c.latestAction) + '</span>' : "") + '<span class="comp-count">' + esc(c.count) + '則</span></div><div class="comp-right">' + rtBlock + '<span class="comp-date">' + esc(c.latestDate ? c.latestDate.replace(/^\d{4}\./, "") : "") + '</span><span class="comp-arrow">▼</span></div></div><div class="comp-body"><div class="report-timeline">' + timelineHtml + '</div></div></div>';
+        });
+        nl.innerHTML = cHtml;
+        if (nStats) nStats.innerText = "共 " + comps.length + " 家追蹤公司，累計 " + totalReps + " 則動態";
+      } else {
+        nBadge.innerText = "0";
+        nl.innerHTML = '<div class="empty-box">📰 試算表「財訊」目前尚無內容資料</div>';
+        if (nStats) nStats.innerText = "";
+      }
+    }
+
+    function fetchLatestData(force) {
+      var btn = document.getElementById("btn-refresh");
+      var icon = document.getElementById("btn-icon");
+      var label = document.getElementById("time-label");
+      icon.innerText = "⏳";
+      label.innerText = "更新中...";
+      btn.style.opacity = "0.7";
+      if (typeof google !== "undefined" && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(d) {
+            btn.style.opacity = "1";
+            if (d) {
+              currentData = d;
+              renderUI(d);
+            }
+          })
+          .withFailureHandler(function(err) {
+            btn.style.opacity = "1";
+            icon.innerText = "❌";
+            label.innerText = "連線失敗";
+          })
+          .getMobileWatchlistData(force === true);
+      } else if (apiCfg.url) {
+        // 獨立網頁版：直接呼叫 Web App 的 JSON API
+        var u = apiCfg.url + (apiCfg.url.indexOf("?") === -1 ? "?" : "&") + "api=json" +
+          "&token=" + encodeURIComponent(apiCfg.token || "") + (force === true ? "&refresh=1" : "") + "&_=" + Date.now();
+        fetch(u, { cache: "no-store" })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            btn.style.opacity = "1";
+            if (d && d.error) {
+              icon.innerText = "❌"; label.innerText = "權杖錯誤";
+              openSettings("權杖不正確，請重新輸入");
+              return;
+            }
+            currentData = d;
+            renderUI(d);
+          })
+          .catch(function() {
+            btn.style.opacity = "1";
+            icon.innerText = "❌";
+            label.innerText = "連線失敗";
+          });
+      } else {
+        btn.style.opacity = "1";
+        icon.innerText = "⚙️";
+        label.innerText = "尚未設定";
+        openSettings();
+      }
+    }
+
+    /* ★ 獨立網頁版連線設定：支援網址 #api=...&token=... 一次帶入 ★ */
+    var IS_GAS = (typeof google !== "undefined" && google.script && google.script.run);
+    var apiCfg = { url: lsGet("APP_API_URL", ""), token: lsGet("APP_API_TOKEN", "") };
+    function readHashConfig() {
+      if (!location.hash || location.hash.length < 2) return false;
+      var params = {};
+      location.hash.slice(1).split("&").forEach(function(kv) {
+        var i = kv.indexOf("=");
+        if (i > 0) params[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1));
+      });
+      if (params.api) { apiCfg.url = params.api; lsSet("APP_API_URL", params.api); }
+      if (params.token) { apiCfg.token = params.token; lsSet("APP_API_TOKEN", params.token); }
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+      return !!(params.api || params.token);
+    }
+    readHashConfig();
+    window.addEventListener("hashchange", function() {
+      if (readHashConfig()) { closeSettings(); fetchLatestData(false); }
+    });
+
+    function openSettings(msg) {
+      document.getElementById("settings-box").style.display = "block";
+      document.getElementById("cfg-url").value = apiCfg.url || "";
+      document.getElementById("cfg-token").value = apiCfg.token || "";
+      document.getElementById("cfg-msg").innerText = msg || "";
+    }
+    function closeSettings() { document.getElementById("settings-box").style.display = "none"; }
+    function saveSettings() {
+      apiCfg.url = document.getElementById("cfg-url").value.trim();
+      apiCfg.token = document.getElementById("cfg-token").value.trim();
+      lsSet("APP_API_URL", apiCfg.url);
+      lsSet("APP_API_TOKEN", apiCfg.token);
+      closeSettings();
+      fetchLatestData(false);
+    }
+
+    if (!IS_GAS) document.getElementById("btn-settings").style.display = "";
+
+    if (currentData) renderUI(currentData);
+    else fetchLatestData(false);
+    /* 自動刷新讀取伺服器快取 (試算表約每分鐘才更新一次)；手動按鈕才強制刷新 */
+    setInterval(function() {
+      var settingsOpen = document.getElementById("settings-box").style.display === "block";
+      if ((IS_GAS || apiCfg.url) && !settingsOpen) fetchLatestData(false);
+    }, 30000);
+  </script>
+</body>
+</html>
