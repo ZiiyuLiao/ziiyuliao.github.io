@@ -349,6 +349,7 @@
 
   <script>
     var currentData = null;
+    var FIXED_API_URL = "https://script.google.com/macros/s/AKfycbxurgUKVPtpP68JlUnuDN_fmCbm86KE16bj8wiP4_eO3_7dCArHFMhWesf96AbBO_HF/exec"; /* 獨立網頁版固定連線網址 */
 
     /* HTML 跳脫：所有來自試算表的文字插入 innerHTML 前都經過此函式 */
     function esc(v) {
@@ -875,7 +876,7 @@
             label.innerText = "連線失敗";
           })
           .getMobileWatchlistData(force === true);
-      } else if (apiCfg.url) {
+      } else if (apiCfg.url && apiCfg.token) {
         // 獨立網頁版：直接呼叫 Web App 的 JSON API
         var u = apiCfg.url + (apiCfg.url.indexOf("?") === -1 ? "?" : "&") + "api=json" +
           "&token=" + encodeURIComponent(apiCfg.token || "") + (force === true ? "&refresh=1" : "") + "&_=" + Date.now();
@@ -906,7 +907,7 @@
 
     /* ★ 獨立網頁版連線設定：支援網址 #api=...&token=... 一次帶入 ★ */
     var IS_GAS = (typeof google !== "undefined" && google.script && google.script.run);
-    var apiCfg = { url: lsGet("APP_API_URL", ""), token: lsGet("APP_API_TOKEN", "") };
+    var apiCfg = { url: FIXED_API_URL || lsGet("APP_API_URL", ""), token: lsGet("APP_API_TOKEN", "") };
     function readHashConfig() {
       if (!location.hash || location.hash.length < 2) return false;
       var params = {};
@@ -914,7 +915,7 @@
         var i = kv.indexOf("=");
         if (i > 0) params[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1));
       });
-      if (params.api) { apiCfg.url = params.api; lsSet("APP_API_URL", params.api); }
+      if (params.api && !FIXED_API_URL) { apiCfg.url = params.api; lsSet("APP_API_URL", params.api); }
       if (params.token) { apiCfg.token = params.token; lsSet("APP_API_TOKEN", params.token); }
       try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
       return !!(params.api || params.token);
@@ -927,12 +928,13 @@
     function openSettings(msg) {
       document.getElementById("settings-box").style.display = "block";
       document.getElementById("cfg-url").value = apiCfg.url || "";
+      document.getElementById("cfg-url").style.display = FIXED_API_URL ? "none" : "";
       document.getElementById("cfg-token").value = apiCfg.token || "";
       document.getElementById("cfg-msg").innerText = msg || "";
     }
     function closeSettings() { document.getElementById("settings-box").style.display = "none"; }
     function saveSettings() {
-      apiCfg.url = document.getElementById("cfg-url").value.trim();
+      apiCfg.url = FIXED_API_URL || document.getElementById("cfg-url").value.trim();
       apiCfg.token = document.getElementById("cfg-token").value.trim();
       lsSet("APP_API_URL", apiCfg.url);
       lsSet("APP_API_TOKEN", apiCfg.token);
@@ -947,7 +949,7 @@
     /* 自動刷新讀取伺服器快取 (試算表約每分鐘才更新一次)；手動按鈕才強制刷新 */
     setInterval(function() {
       var settingsOpen = document.getElementById("settings-box").style.display === "block";
-      if ((IS_GAS || apiCfg.url) && !settingsOpen) fetchLatestData(false);
+      if ((IS_GAS || (apiCfg.url && apiCfg.token)) && !settingsOpen) fetchLatestData(false);
     }, 30000);
   </script>
 </body>
