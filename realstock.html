@@ -220,6 +220,23 @@
     .rep-summary { font-size: 12px; color: #94a3b8; line-height: 1.45; }
     .empty-box { text-align: center; padding: 40px 10px; color: #64748b; font-size: 13px; }
 
+    /* ★ 自動更新狀態 ★ */
+    .status-col { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
+    .auto-badge { font-size: 10px; font-weight: 700; color: #64748b; white-space: nowrap; }
+    .time-label { font-size: 10px; color: #94a3b8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .app-title { white-space: nowrap; font-size: 17px !important; }
+    .btn-refresh { white-space: nowrap; }
+    .auto-badge.on { color: #4ade80; }
+
+    /* ★ 自訂起始日 ★ */
+    .custom-date-row { display: none; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 12px; color: #94a3b8; }
+    .custom-date-row.show { display: flex; }
+    .custom-date-row input {
+      flex: 1; background: #141721; border: 1px solid #1e2433; border-radius: 8px; color: #fff;
+      padding: 6px 8px; font-size: 13px; color-scheme: dark;
+    }
+    .perf-period { font-size: 11px; color: #64748b; margin: -2px 2px 8px 2px; }
+
     /* ★ 今日損益列 ★ */
     .today-row {
       display: flex; align-items: baseline; justify-content: space-between;
@@ -280,8 +297,12 @@
   <div class="header-bar">
     <div class="app-title">📊 即時持股看盤</div>
     <div style="display:flex;gap:6px;align-items:center">
-      <button id="btn-refresh" class="btn-refresh" onclick="fetchLatestData(true)">
-        <span id="btn-icon">🔄</span> <span id="time-label">讀取中</span>
+      <div class="status-col">
+        <span id="auto-badge" class="auto-badge" title="盤中每 30 秒自動更新「我的持股」">● 非盤中</span>
+        <span id="time-label" class="time-label">讀取中</span>
+      </div>
+      <button id="btn-refresh" class="btn-refresh" onclick="fetchLatestData(true)" title="全部更新：持股、大盤、財報動態、績效">
+        <span id="btn-icon">🔄</span><span>全部更新</span>
       </button>
       <button id="btn-settings" class="btn-refresh" style="display:none" onclick="openSettings()" aria-label="連線設定">⚙️</button>
     </div>
@@ -318,6 +339,11 @@
   <!-- 績效頁籤 (我的報酬 vs 大盤) -->
   <div id="tab-perf" class="tab-content">
     <div id="range-bar" class="range-bar"></div>
+    <div id="custom-date-row" class="custom-date-row">
+      <span>起始日</span>
+      <input type="date" id="custom-start" onchange="setCustomStart(this.value)">
+    </div>
+    <div id="perf-period" class="perf-period"></div>
     <div id="perf-tiles" class="perf-tiles"></div>
     <div class="perf-chart-card">
       <div class="perf-legend">
@@ -482,9 +508,17 @@
       { key: "3M", label: "3月", days: 92 },
       { key: "6M", label: "6月", days: 183 },
       { key: "1Y", label: "1年", days: 366 },
-      { key: "ALL", label: "全部", days: 0 }
+      { key: "ALL", label: "全部", days: 0 },
+      { key: "CUSTOM", label: "自訂", days: -1 }
     ];
     var perfRange = lsGet("APP_PERF_RANGE", "3M");
+    var customStart = lsGet("APP_PERF_CUSTOM_START", ""); // yyyy-mm-dd
+
+    function setCustomStart(v) {
+      customStart = v || "";
+      lsSet("APP_PERF_CUSTOM_START", customStart);
+      renderPerf(currentData);
+    }
 
     function setPerfRange(key) {
       perfRange = key;
@@ -544,12 +578,15 @@
         rb += '<div class="range-chip' + (o.key === perfRange ? " active" : "") + '" onclick="setPerfRange(&quot;' + o.key + '&quot;)">' + o.label + '</div>';
       });
       document.getElementById("range-bar").innerHTML = rb;
+      var cdr = document.getElementById("custom-date-row");
+      cdr.className = "custom-date-row" + (perfRange === "CUSTOM" ? " show" : "");
 
       var all = (data && data.equity) || [];
       var chartEl = document.getElementById("perf-chart");
       var tilesEl = document.getElementById("perf-tiles");
       var tableEl = document.getElementById("perf-table");
       if (all.length < 2) {
+        document.getElementById("perf-period").innerText = "";
         tilesEl.innerHTML = "";
         chartEl.innerHTML = '<div class="empty-box">每個交易日 23:00 會自動記錄一筆資產快照，<br>累積 2 天以上就會顯示績效曲線。<br>(也可從試算表選單「記錄今日資產快照」手動記錄)</div>';
         tableEl.innerHTML = "";
@@ -559,13 +596,33 @@
       // 依區間篩選
       var opt = RANGE_OPTIONS.filter(function(o) { return o.key === perfRange; })[0] || RANGE_OPTIONS[1];
       var rows = all;
-      if (opt.days > 0) {
+      var cutoff = null;
+      if (opt.key === "CUSTOM") {
+        // 自訂起始日：日期選擇器限制在資料範圍內，預設為一個月前
+        var inp = document.getElementById("custom-start");
+        var firstD = String(all[0].d).split("/").join("-"), lastD = String(all[all.length - 1].d).split("/").join("-");
+        inp.min = firstD; inp.max = lastD;
+        if (!customStart) {
+          var dflt = new Date(parseYmd(all[all.length - 1].d).getTime() - 31 * 86400000);
+          customStart = dflt.getFullYear() + "-" + ("0" + (dflt.getMonth() + 1)).slice(-2) + "-" + ("0" + dflt.getDate()).slice(-2);
+        }
+        if (customStart < firstD) customStart = firstD;
+        if (customStart > lastD) customStart = lastD;
+        inp.value = customStart;
+        cutoff = parseYmd(customStart);
+      } else if (opt.days > 0) {
         var lastDate = parseYmd(all[all.length - 1].d);
-        var cutoff = new Date(lastDate.getTime() - opt.days * 86400000);
-        var startIdx = 0;
-        for (var i = 0; i < all.length; i++) { var dt = parseYmd(all[i].d); if (dt && dt >= cutoff) { startIdx = i; break; } }
-        rows = all.slice(Math.max(0, startIdx - 1)); // 多取前一日作為基準
+        cutoff = new Date(lastDate.getTime() - opt.days * 86400000);
       }
+      if (cutoff) {
+        var startIdx = all.length - 1;
+        for (var i = 0; i < all.length; i++) { var dt = parseYmd(all[i].d); if (dt && dt >= cutoff) { startIdx = i; break; } }
+        rows = all.slice(Math.max(0, startIdx - 1)); // 多取前一個交易日作為基準
+      }
+      if (rows.length < 2) rows = all.slice(-2);
+      // 顯示實際計算期間與基準日
+      document.getElementById("perf-period").innerText =
+        "期間 " + rows[1].d + " ～ " + rows[rows.length - 1].d + "（以 " + rows[0].d + " 收盤為基準，共 " + (rows.length - 1) + " 個交易日）";
       perfPoints = computePerfSeries(rows);
       var last = perfPoints[perfPoints.length - 1];
       var excess = (last.ix === null) ? null : last.mine - last.ix;
@@ -777,10 +834,11 @@
       if (input) { input.value = ""; onSearchCompany(""); }
     }
 
-    function renderUI(data) {
+    function renderUI(data, holdingsOnly) {
       if (!data) return;
       document.getElementById("btn-icon").innerText = "🔄";
       document.getElementById("time-label").innerText = data.updateTime || "";
+      updateAutoBadge();
 
       var p = data.portfolio || {};
       var uPnlClass = p.isProfit ? "text-up" : (p.isLoss ? "text-down" : "text-flat");
@@ -816,6 +874,7 @@
 
       /* ★ 持股清單 (可切換排序) ★ */
       renderStocks(data);
+      if (holdingsOnly) return; // 自動更新只刷新「我的持股」，不動財報動態與績效 (保留搜尋與展開狀態)
       if (currentTab === "perf") renderPerf(data);
 
       /* ★ 渲染公司手風琴清單（保持展開收合狀態）★ */
@@ -863,6 +922,27 @@
       }
     }
 
+    /* ★ 讀取資料：scope = "holdings" 只抓我的持股頁所需資料；其他 = 全部 ★ */
+    function requestData(force, scope, onOk, onFail) {
+      if (IS_GAS) {
+        google.script.run
+          .withSuccessHandler(function(d) { if (d) onOk(d); else onFail("empty"); })
+          .withFailureHandler(function() { onFail("network"); })
+          .getMobileWatchlistData(force === true, scope || "");
+      } else if (apiCfg.url && apiCfg.token) {
+        var u = apiCfg.url + (apiCfg.url.indexOf("?") === -1 ? "?" : "&") + "api=json" +
+          "&token=" + encodeURIComponent(apiCfg.token || "") + (force === true ? "&refresh=1" : "") +
+          (scope ? "&scope=" + scope : "") + "&_=" + Date.now();
+        fetch(u, { cache: "no-store" })
+          .then(function(r) { return r.json(); })
+          .then(function(d) { if (d && d.error) onFail("auth"); else onOk(d); })
+          .catch(function() { onFail("network"); });
+      } else {
+        onFail("config");
+      }
+    }
+
+    /* ★ 全部更新 (按鈕、首次載入)：持股、大盤、財報動態、績效全部重抓 ★ */
     function fetchLatestData(force) {
       var btn = document.getElementById("btn-refresh");
       var icon = document.getElementById("btn-icon");
@@ -870,48 +950,53 @@
       icon.innerText = "⏳";
       label.innerText = "更新中...";
       btn.style.opacity = "0.7";
-      if (typeof google !== "undefined" && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(d) {
-            btn.style.opacity = "1";
-            if (d) {
-              currentData = d;
-              renderUI(d);
-            }
-          })
-          .withFailureHandler(function(err) {
-            btn.style.opacity = "1";
-            icon.innerText = "❌";
-            label.innerText = "連線失敗";
-          })
-          .getMobileWatchlistData(force === true);
-      } else if (apiCfg.url && apiCfg.token) {
-        // 獨立網頁版：直接呼叫 Web App 的 JSON API
-        var u = apiCfg.url + (apiCfg.url.indexOf("?") === -1 ? "?" : "&") + "api=json" +
-          "&token=" + encodeURIComponent(apiCfg.token || "") + (force === true ? "&refresh=1" : "") + "&_=" + Date.now();
-        fetch(u, { cache: "no-store" })
-          .then(function(r) { return r.json(); })
-          .then(function(d) {
-            btn.style.opacity = "1";
-            if (d && d.error) {
-              icon.innerText = "❌"; label.innerText = "權杖錯誤";
-              openSettings("權杖不正確，請重新輸入");
-              return;
-            }
-            currentData = d;
-            renderUI(d);
-          })
-          .catch(function() {
-            btn.style.opacity = "1";
-            icon.innerText = "❌";
-            label.innerText = "連線失敗";
-          });
-      } else {
+      requestData(force, "", function(d) {
         btn.style.opacity = "1";
-        icon.innerText = "⚙️";
-        label.innerText = "尚未設定";
-        openSettings();
-      }
+        currentData = d;
+        renderUI(d);
+      }, function(reason) {
+        btn.style.opacity = "1";
+        if (reason === "config") { icon.innerText = "⚙️"; label.innerText = "尚未設定"; openSettings(); return; }
+        icon.innerText = "❌";
+        if (reason === "auth") { label.innerText = "權杖錯誤"; openSettings("權杖不正確，請重新輸入"); return; }
+        label.innerText = "連線失敗";
+      });
+    }
+
+    /* ★ 盤中自動更新：只更新「我的持股」(大盤、帳戶總覽、持股清單) ★ */
+    var autoBusy = false;
+    function refreshHoldings() {
+      if (autoBusy) return;
+      autoBusy = true;
+      requestData(false, "holdings", function(d) {
+        autoBusy = false;
+        if (!currentData) currentData = {};
+        ["updateTime", "portfolio", "market", "stocks", "marketClosedToday"].forEach(function(k) {
+          if (d[k] !== undefined) currentData[k] = d[k];
+        });
+        renderUI(currentData, true);
+      }, function() { autoBusy = false; });
+    }
+
+    /* 台北時間是否在盤中 (週一~五 09:00~13:35)；今日確定休市則不更新 */
+    function taipeiNow() {
+      var n = new Date();
+      return new Date(n.getTime() + n.getTimezoneOffset() * 60000 + 8 * 3600000);
+    }
+    function isMarketHours() {
+      var t = taipeiNow();
+      var dow = t.getDay(), hm = t.getHours() * 100 + t.getMinutes();
+      if (dow === 0 || dow === 6) return false;
+      if (hm < 900 || hm > 1335) return false;
+      if (currentData && currentData.marketClosedToday) return false;
+      return true;
+    }
+    function updateAutoBadge() {
+      var b = document.getElementById("auto-badge");
+      if (!b) return;
+      if (isMarketHours()) { b.className = "auto-badge on"; b.innerText = "● 盤中自動"; }
+      else if (currentData && currentData.marketClosedToday) { b.className = "auto-badge"; b.innerText = "● 今日休市"; }
+      else { b.className = "auto-badge"; b.innerText = "● 非盤中"; }
     }
 
     /* ★ 獨立網頁版連線設定：支援網址 #api=...&token=... 一次帶入 ★ */
@@ -956,10 +1041,19 @@
     if (currentData) renderUI(currentData);
     else fetchLatestData(false);
     /* 自動刷新讀取伺服器快取 (試算表約每分鐘才更新一次)；手動按鈕才強制刷新 */
-    setInterval(function() {
+    /* 每 30 秒檢查一次：盤中、頁面在前景、已設定連線時，才自動更新「我的持股」 */
+    function canAutoRefresh() {
       var settingsOpen = document.getElementById("settings-box").style.display === "block";
-      if ((IS_GAS || (apiCfg.url && apiCfg.token)) && !settingsOpen) fetchLatestData(false);
+      return isMarketHours() && document.visibilityState !== "hidden" && !settingsOpen &&
+        (IS_GAS || (apiCfg.url && apiCfg.token));
+    }
+    setInterval(function() {
+      updateAutoBadge();
+      if (canAutoRefresh()) refreshHoldings();
     }, 30000);
+    document.addEventListener("visibilitychange", function() {
+      if (document.visibilityState === "visible" && canAutoRefresh()) refreshHoldings();
+    });
   </script>
 </body>
 </html>
