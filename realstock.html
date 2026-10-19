@@ -271,7 +271,9 @@
       border: 1px solid #1e2433; padding: 5px 0; border-radius: 8px; cursor: pointer;
     }
     .range-chip.active { color: #ffffff; background: #2563eb; border-color: #2563eb; }
-    .perf-tiles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .perf-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .perf-tile-sub { font-size: 10px; color: #8e94a5; margin-top: 1px; }
+    .swatch-dash { display: inline-block; width: 12px; height: 0; border-top: 2px dashed; }
     .perf-tile { background: #141721; border: 1px solid #1e2433; border-radius: 9px; padding: 7px 8px; }
     .perf-tile-label { font-size: 10px; color: #8e94a5; display: flex; align-items: center; gap: 4px; }
     .perf-tile-val { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; margin-top: 2px; }
@@ -349,6 +351,7 @@
       <div class="perf-legend">
         <span><i class="swatch" style="background:#3b82f6"></i>我的報酬</span>
         <span><i class="swatch" style="background:#d97706"></i>加權指數</span>
+        <span><i class="swatch-dash" style="border-color:#0d9488"></i>櫃買指數</span>
       </div>
       <div id="perf-chart"></div>
       <div id="perf-tip" class="perf-tip"></div>
@@ -544,8 +547,9 @@
     function computePerfSeries(rows) {
       var out = [];
       if (!rows || rows.length === 0) return out;
-      var growth = 1, ix0 = null;
+      var growth = 1, ix0 = null, ox0 = null;
       for (var z = 0; z < rows.length; z++) { if (rows[z].ix) { ix0 = rows[z].ix; break; } }
+      for (var z2 = 0; z2 < rows.length; z2++) { if (rows[z2].ox) { ox0 = rows[z2].ox; break; } }
       for (var i = 0; i < rows.length; i++) {
         var r = rows[i];
         if (i > 0 && r.today !== null && r.value !== null) {
@@ -565,6 +569,7 @@
           d: r.d,
           mine: (growth - 1) * 100,
           ix: (ix0 && r.ix) ? (r.ix / ix0 - 1) * 100 : null,
+          ox: (ox0 && r.ox) ? (r.ox / ox0 - 1) * 100 : null,
           value: r.value, today: r.today, cum: r.cum
         });
       }
@@ -626,11 +631,15 @@
       perfPoints = computePerfSeries(rows);
       var last = perfPoints[perfPoints.length - 1];
       var excess = (last.ix === null) ? null : last.mine - last.ix;
+      var excessO = (last.ox === null) ? null : last.mine - last.ox;
+      var subTxt = function(v) { return '<span class="' + colorClass(v > 0, v < 0) + '">' + fmtPct(v) + '</span>'; };
 
       tilesEl.innerHTML =
         '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch" style="background:#3b82f6"></i>我的報酬</div><div class="perf-tile-val ' + colorClass(last.mine > 0, last.mine < 0) + '">' + fmtPct(last.mine) + '</div></div>' +
+        '<div class="perf-tile"><div class="perf-tile-label">超額報酬（vs 加權）</div><div class="perf-tile-val ' + colorClass(excess > 0, excess < 0) + '">' + fmtPct(excess) + '</div>' +
+          '<div class="perf-tile-sub">vs 櫃買 ' + subTxt(excessO) + '</div></div>' +
         '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch" style="background:#d97706"></i>加權指數</div><div class="perf-tile-val ' + colorClass(last.ix > 0, last.ix < 0) + '">' + fmtPct(last.ix) + '</div></div>' +
-        '<div class="perf-tile"><div class="perf-tile-label">超額報酬</div><div class="perf-tile-val ' + colorClass(excess > 0, excess < 0) + '">' + fmtPct(excess) + '</div></div>';
+        '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch-dash" style="border-color:#0d9488"></i>櫃買指數</div><div class="perf-tile-val ' + colorClass(last.ox > 0, last.ox < 0) + '">' + fmtPct(last.ox) + '</div></div>';
 
       drawPerfChart(chartEl, perfPoints);
 
@@ -649,7 +658,7 @@
       var W = Math.max(280, el.clientWidth || 340), H = 200;
       var padL = 40, padR = 10, padT = 10, padB = 22;
       var vals = [];
-      pts.forEach(function(p) { vals.push(p.mine); if (p.ix !== null) vals.push(p.ix); });
+      pts.forEach(function(p) { vals.push(p.mine); if (p.ix !== null) vals.push(p.ix); if (p.ox !== null) vals.push(p.ox); });
       var yMin = Math.min.apply(null, vals.concat([0])), yMax = Math.max.apply(null, vals.concat([0]));
       var span = (yMax - yMin) || 1;
       yMin -= span * 0.08; yMax += span * 0.08;
@@ -681,11 +690,12 @@
         return d;
       };
       var ixPath = '<path d="' + lineOf("ix") + '" fill="none" stroke="#d97706" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      var oxPath = '<path d="' + lineOf("ox") + '" fill="none" stroke="#0d9488" stroke-width="2" stroke-dasharray="5,4" stroke-linejoin="round" stroke-linecap="round"/>';
       var myPath = '<path d="' + lineOf("mine") + '" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
       var cross = '<g id="perf-cross" style="display:none"><line id="pc-line" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#64748b" stroke-width="1"/>' +
-        '<circle id="pc-a" r="4" fill="#3b82f6" stroke="#141721" stroke-width="2"/><circle id="pc-b" r="4" fill="#d97706" stroke="#141721" stroke-width="2"/></g>';
+        '<circle id="pc-a" r="4" fill="#3b82f6" stroke="#141721" stroke-width="2"/><circle id="pc-b" r="4" fill="#d97706" stroke="#141721" stroke-width="2"/><circle id="pc-c" r="4" fill="#0d9488" stroke="#141721" stroke-width="2"/></g>';
 
-      el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="我的報酬與加權指數報酬比較">' + g + ixPath + myPath + cross +
+      el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="我的報酬與加權指數、櫃買指數報酬比較">' + g + ixPath + oxPath + myPath + cross +
         '<rect id="perf-hit" x="' + padL + '" y="0" width="' + (W - padL - padR) + '" height="' + H + '" fill="transparent"/></svg>';
 
       // 十字線 + 提示框
@@ -703,9 +713,12 @@
         el.querySelector("#pc-a").setAttribute("cx", x(i)); el.querySelector("#pc-a").setAttribute("cy", y(p.mine));
         var b = el.querySelector("#pc-b");
         if (p.ix !== null) { b.style.display = ""; b.setAttribute("cx", x(i)); b.setAttribute("cy", y(p.ix)); } else { b.style.display = "none"; }
+        var c3 = el.querySelector("#pc-c");
+        if (p.ox !== null) { c3.style.display = ""; c3.setAttribute("cx", x(i)); c3.setAttribute("cy", y(p.ox)); } else { c3.style.display = "none"; }
         tip.innerHTML = '<div class="tip-date">' + esc(p.d) + '</div>' +
           '<div><i class="swatch" style="background:#3b82f6"></i> 我的 ' + fmtPct(p.mine) + '</div>' +
-          '<div><i class="swatch" style="background:#d97706"></i> 大盤 ' + fmtPct(p.ix) + '</div>' +
+          '<div><i class="swatch" style="background:#d97706"></i> 加權 ' + fmtPct(p.ix) + '</div>' +
+          '<div><i class="swatch-dash" style="border-color:#0d9488"></i> 櫃買 ' + fmtPct(p.ox) + '</div>' +
           '<div style="color:#94a3b8">當日損益 ' + fmtMoney(p.today) + '</div>';
         tip.style.display = "block";
         var px = x(i) * (rect.width / W);
