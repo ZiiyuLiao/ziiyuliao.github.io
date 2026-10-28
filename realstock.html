@@ -448,10 +448,13 @@
     }
 
     /* ★ 每日情報 ★ */
+    /* 順序需與 stock-widget.jsx 的 INTEL_SECTIONS 保持一致 */
     var INTEL_SECTIONS = [
       { cat: "摘要",     title: "今日重點" },
       { cat: "大盤",     title: "大盤" },
       { cat: "個股",     title: "持股新聞" },
+      { cat: "三大法人", title: "三大法人買賣超", note: "資料來源：FinMind" },
+      { cat: "月營收",   title: "月營收", note: "資料來源：FinMind" },
       { cat: "美股",     title: "美股" },
       { cat: "ADR",      title: "ADR 與溢價", note: "溢價＝ADR 換算台幣 ÷ 台股收盤 − 1" },
       { cat: "股癌",     title: "股癌重點", note: "第三方筆記皆需查證；時間碼只顯示來源原文" },
@@ -497,7 +500,11 @@
         box.innerHTML = '<div class="intel-empty">尚無情報資料</div>';
         return;
       }
-      head.innerHTML = '<span>資料日 ' + esc(data.intel.date) + '（' + esc((data.intel.sessions || []).join("、")) + '）</span><span>寫入 ' + esc(data.intel.writtenAt || "") + '</span>';
+      var parts = data.intel.parts || {};
+      var partLine = ["台股", "美股", "podcast", "籌碼財報"].filter(function(p) { return parts[p]; }).map(function(p) {
+        return esc(p) + " " + esc(parts[p].date) + "（" + esc((parts[p].sessions || []).join("、")) + "）";
+      }).join("　｜　");
+      head.innerHTML = '<span>' + partLine + '</span><span>寫入 ' + esc(data.intel.writtenAt || "") + '</span>';
       var html = "";
       INTEL_SECTIONS.forEach(function(sec) {
         var list = [], seen = {};
