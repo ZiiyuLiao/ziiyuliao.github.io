@@ -874,12 +874,28 @@
       hit.addEventListener("touchend", function() { setTimeout(leave, 1500); });
     }
 
-    /* ★ 今日損益日內走勢圖 (每分鐘一點，當日 09:00~13:30 累積) ★ */
+    /* ★ 今日損益日內走勢圖 (固定 09:00~13:30 每分鐘一格時間軸，沒資料的分鐘留空) ★ */
     function fmtMoneyShort_(v) {
       var sign = v < 0 ? "-" : "";
       var av = Math.abs(v);
       if (av >= 10000) return sign + (av / 10000).toFixed(1) + "萬";
       return sign + Math.round(av);
+    }
+
+    /* 把實際抓到的資料點對應到 09:00~13:30 每分鐘一格的固定時間軸上，沒資料的分鐘 pnl/rate 為 null */
+    function buildFullDayIntradaySlots_(rawPts) {
+      var map = {};
+      (rawPts || []).forEach(function(p) { map[p.t] = p; });
+      var slots = [];
+      for (var h = 9; h <= 13; h++) {
+        var mEnd = (h === 13) ? 30 : 59;
+        for (var m = 0; m <= mEnd; m++) {
+          var t = (h < 10 ? "0" + h : "" + h) + ":" + (m < 10 ? "0" + m : "" + m);
+          var hit = map[t];
+          slots.push({ t: t, pnl: hit ? hit.pnl : null, rate: hit ? hit.rate : null });
+        }
+      }
+      return slots;
     }
 
     function renderTodayPnlChart(data) {
@@ -889,23 +905,28 @@
       drawTodayPnlChart(el, pts);
     }
 
-    function drawTodayPnlChart(el, pts) {
-      if (!pts || pts.length < 1) {
+    function drawTodayPnlChart(el, rawPts) {
+      if (!rawPts || rawPts.length < 1) {
         el.innerHTML = '<div class="empty-box" style="padding:18px 10px;">📉 今日尚無走勢資料（開盤後每分鐘自動記錄一筆）</div>';
         return;
       }
+      var pts = buildFullDayIntradaySlots_(rawPts); // 固定時間軸，長度恆為 271 (09:00~13:30)
+      var n = pts.length;
       var W = Math.max(280, el.clientWidth || 340), H = 150;
       var padL = 46, padR = 10, padT = 10, padB = 20;
-      var vals = pts.map(function(p) { return p.pnl; }).concat([0]);
+      var presentVals = [];
+      pts.forEach(function(p) { if (p.pnl !== null) presentVals.push(p.pnl); });
+      var vals = presentVals.concat([0]);
       var yMin = Math.min.apply(null, vals), yMax = Math.max.apply(null, vals);
       var span = (yMax - yMin) || 1;
       yMin -= span * 0.1; yMax += span * 0.1;
-      var n = pts.length;
-      var x = function(i) { return padL + (n === 1 ? (W - padL - padR) / 2 : i / (n - 1) * (W - padL - padR)); };
+      var x = function(i) { return padL + i / (n - 1) * (W - padL - padR); };
       var y = function(v) { return padT + (1 - (v - yMin) / (yMax - yMin)) * (H - padT - padB); };
-      var last = pts[n - 1];
-      var lineColor = last.pnl > 0 ? "#e5484d" : (last.pnl < 0 ? "#30a46c" : "#94a3b8"); // 紅漲綠跌
-      var fillColor = last.pnl > 0 ? "rgba(229,72,77,0.14)" : (last.pnl < 0 ? "rgba(48,164,108,0.14)" : "rgba(148,163,184,0.1)");
+
+      var lastPresent = null;
+      for (var li = n - 1; li >= 0; li--) { if (pts[li].pnl !== null) { lastPresent = pts[li]; break; } }
+      var lineColor = lastPresent && lastPresent.pnl > 0 ? "#e5484d" : (lastPresent && lastPresent.pnl < 0 ? "#30a46c" : "#94a3b8"); // 紅漲綠跌
+      var fillColor = lastPresent && lastPresent.pnl > 0 ? "rgba(229,72,77,0.14)" : (lastPresent && lastPresent.pnl < 0 ? "rgba(48,164,108,0.14)" : "rgba(148,163,184,0.1)");
 
       var g = "";
       for (var k = 0; k <= 3; k++) {
@@ -914,27 +935,41 @@
              '<text x="' + (padL - 5) + '" y="' + (y(v) + 3).toFixed(1) + '" fill="#64748b" font-size="10" text-anchor="end">' + fmtMoneyShort_(v) + '</text>';
       }
       g += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '" stroke="#475569" stroke-width="1" stroke-dasharray="3,3"/>';
-      g += '<text x="' + padL + '" y="' + (H - 5) + '" fill="#64748b" font-size="10">' + esc(pts[0].t) + '</text>' +
-           '<text x="' + (W - padR) + '" y="' + (H - 5) + '" fill="#64748b" font-size="10" text-anchor="end">' + esc(last.t) + '</text>';
+      // X 軸固定顯示開盤/收盤時間，不隨實際資料的起訖點變動
+      g += '<text x="' + padL + '" y="' + (H - 5) + '" fill="#64748b" font-size="10">09:00</text>' +
+           '<text x="' + (W - padR) + '" y="' + (H - 5) + '" fill="#64748b" font-size="10" text-anchor="end">13:30</text>';
 
-      var lineD = "";
-      pts.forEach(function(p, i) {
-        lineD += (i === 0 ? "M" : "L") + x(i).toFixed(1) + "," + y(p.pnl).toFixed(1);
+      // 依「連續有資料」的區段分別畫線與面積，中間沒資料的分鐘自然留白斷開
+      var segments = [], cur = null;
+      for (var i = 0; i < n; i++) {
+        if (pts[i].pnl !== null) {
+          if (!cur) { cur = []; segments.push(cur); }
+          cur.push(i);
+        } else {
+          cur = null;
+        }
+      }
+      var lineD = "", areaD = "";
+      segments.forEach(function(seg) {
+        var segLine = "";
+        seg.forEach(function(i, k2) {
+          segLine += (k2 === 0 ? "M" : "L") + x(i).toFixed(1) + "," + y(pts[i].pnl).toFixed(1);
+        });
+        lineD += segLine;
+        var x0 = x(seg[0]).toFixed(1), x1 = x(seg[seg.length - 1]).toFixed(1), yBase = y(yMin).toFixed(1);
+        areaD += segLine + " L" + x1 + "," + yBase + " L" + x0 + "," + yBase + " Z";
       });
-      var areaD = lineD + " L" + x(n - 1).toFixed(1) + "," + y(yMin).toFixed(1) + " L" + x(0).toFixed(1) + "," + y(yMin).toFixed(1) + " Z";
 
-      var path = '<path d="' + areaD + '" fill="' + fillColor + '" stroke="none"/>' +
-                 '<path d="' + lineD + '" fill="none" stroke="' + lineColor + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      var path = (areaD ? '<path d="' + areaD + '" fill="' + fillColor + '" stroke="none"/>' : "") +
+                 (lineD ? '<path d="' + lineD + '" fill="none" stroke="' + lineColor + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' : "");
       var cross = '<g id="tpc-cross" style="display:none"><line id="tpc-line" y1="' + padT + '" y2="' + (H - padB) + '" stroke="#64748b" stroke-width="1"/>' +
         '<circle id="tpc-dot" r="4" fill="' + lineColor + '" stroke="#141721" stroke-width="2"/></g>';
 
       el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" height="' + H + '" role="img" aria-label="今日損益走勢圖">' + g + path + cross +
         '<rect id="tpc-hit" x="' + padL + '" y="0" width="' + (W - padL - padR) + '" height="' + H + '" fill="transparent"/></svg>';
 
-      if (n < 2) return; // 只有一個點時不需要十字線互動
-
       var svg = el.querySelector("svg"), hit = el.querySelector("#tpc-hit"), tip = document.getElementById("today-pnl-tip");
-      var crossG = el.querySelector("#tpc-cross");
+      var crossG = el.querySelector("#tpc-cross"), dot = el.querySelector("#tpc-dot");
       var move = function(evt) {
         var rect = svg.getBoundingClientRect();
         var cx = (evt.touches ? evt.touches[0].clientX : evt.clientX) - rect.left;
@@ -944,10 +979,17 @@
         var p = pts[i];
         crossG.style.display = "";
         el.querySelector("#tpc-line").setAttribute("x1", x(i)); el.querySelector("#tpc-line").setAttribute("x2", x(i));
-        el.querySelector("#tpc-dot").setAttribute("cx", x(i)); el.querySelector("#tpc-dot").setAttribute("cy", y(p.pnl));
+        if (p.pnl === null) {
+          dot.style.display = "none";
+        } else {
+          dot.style.display = "";
+          dot.setAttribute("cx", x(i)); dot.setAttribute("cy", y(p.pnl));
+        }
         if (!tip) return;
         tip.innerHTML = '<div class="tip-date">' + esc(p.t) + '</div>' +
-          '<div style="color:' + (p.pnl > 0 ? "#e5484d" : p.pnl < 0 ? "#30a46c" : "#94a3b8") + '">' + fmtMoney(p.pnl) + ' (' + fmtPct(p.rate) + ')</div>';
+          (p.pnl === null
+            ? '<div style="color:#64748b">尚無資料</div>'
+            : '<div style="color:' + (p.pnl > 0 ? "#e5484d" : p.pnl < 0 ? "#30a46c" : "#94a3b8") + '">' + fmtMoney(p.pnl) + ' (' + fmtPct(p.rate) + ')</div>');
         tip.style.display = "block";
         var px = x(i) * (rect.width / W);
         var tw = tip.offsetWidth;
