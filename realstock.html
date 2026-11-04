@@ -1265,7 +1265,7 @@
       requestData(false, "holdings", function(d) {
         autoBusy = false;
         if (!currentData) currentData = {};
-        ["updateTime", "portfolio", "market", "stocks", "marketClosedToday"].forEach(function(k) {
+        ["updateTime", "portfolio", "market", "stocks", "marketClosedToday", "intraday"].forEach(function(k) {
           if (d[k] !== undefined) currentData[k] = d[k];
         });
         renderUI(currentData, true);
@@ -1277,20 +1277,25 @@
       var n = new Date();
       return new Date(n.getTime() + n.getTimezoneOffset() * 60000 + 8 * 3600000);
     }
+    // 註：這裡只看「行事曆」(週一~五 09:00~13:35)，故意不檢查 marketClosedToday。
+    // 原因：如果拿 currentData.marketClosedToday 當作「要不要繼續自動刷新」的條件，
+    // 一旦某次讀到的資料裡這個欄位剛好是 true (例如頁面一開始載入時剛好卡到舊狀態)，
+    // 之後就再也不會呼叫 refreshHoldings() 去要新資料──而這個欄位本身只有重新要資料
+    // 才會更新，等於整個自動刷新永遠卡死，必須手動重新整理網頁才能恢復。
+    // 把「是否自動刷新」跟「是否顯示休市」分開，才不會互相卡住。
     function isMarketHours() {
       var t = taipeiNow();
       var dow = t.getDay(), hm = t.getHours() * 100 + t.getMinutes();
       if (dow === 0 || dow === 6) return false;
       if (hm < 900 || hm > 1335) return false;
-      if (currentData && currentData.marketClosedToday) return false;
       return true;
     }
     function updateAutoBadge() {
       var b = document.getElementById("auto-badge");
       if (!b) return;
-      if (isMarketHours()) { b.className = "auto-badge on"; b.innerText = "● 盤中自動"; }
+      if (!isMarketHours()) { b.className = "auto-badge"; b.innerText = "● 非盤中"; }
       else if (currentData && currentData.marketClosedToday) { b.className = "auto-badge"; b.innerText = "● 今日休市"; }
-      else { b.className = "auto-badge"; b.innerText = "● 非盤中"; }
+      else { b.className = "auto-badge on"; b.innerText = "● 盤中自動"; }
     }
 
     /* ★ 獨立網頁版連線設定：支援網址 #api=...&token=... 一次帶入 ★ */
