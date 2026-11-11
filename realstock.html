@@ -351,6 +351,12 @@
     <div id="cfg-msg" class="today-note" style="margin-top:6px"></div>
   </div>
 
+  <div id="pocket-switch" class="nav-tabs" style="margin-bottom:6px">
+    <div id="btn-pocket-1" class="tab-btn active" onclick="switchPocket('1')">錢袋1</div>
+    <div id="btn-pocket-2" class="tab-btn" onclick="switchPocket('2')">錢袋2</div>
+    <div id="btn-pocket-combined" class="tab-btn" onclick="switchPocket('combined')">合計</div>
+  </div>
+
   <div class="nav-tabs">
     <div id="btn-tab-holdings" class="tab-btn active" onclick="switchTab('holdings')">我的持股</div>
     <div id="btn-tab-news" class="tab-btn" onclick="switchTab('news')">
@@ -438,6 +444,22 @@
 
     function lsGet(k, def) { try { var v = localStorage.getItem(k); return v === null ? def : v; } catch (e) { return def; } }
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+    /* ★ 錢袋切換 (錢袋1 / 錢袋2 / 合計)，記住上次選擇 ★ */
+    var currentPocket = lsGet("APP_POCKET", "1");
+    function renderPocketSwitch() {
+      ["1", "2", "combined"].forEach(function(p) {
+        var el = document.getElementById("btn-pocket-" + p);
+        if (el) el.className = p === currentPocket ? "tab-btn active" : "tab-btn";
+      });
+    }
+    function switchPocket(p) {
+      if (p === currentPocket) return;
+      currentPocket = p;
+      lsSet("APP_POCKET", p);
+      renderPocketSwitch();
+      fetchLatestData(false);
+    }
 
     var currentTab = "holdings";
     function switchTab(name) {
@@ -616,7 +638,8 @@
           '<div class="d-row-main">' +
             '<div class="d-info-left">' +
               '<span class="d-stock-name">' + esc(s.name) + '</span>' +
-              '<span class="d-stock-code">' + esc(s.code) + '</span>' + iBadge +
+              '<span class="d-stock-code">' + esc(s.code) + '</span>' +
+              (data && data.pocket === "combined" && s.pocketLabel ? '<span class="d-stock-code" style="background:#20304a;color:#93c5fd">' + esc(s.pocketLabel) + '</span>' : '') + iBadge +
             '</div>' +
             '<div class="d-pnl-right">' +
               '<span class="d-pnl-amount ' + pnlTier.textClass + '">' + esc(s.pnlFormatted) + '</span>' +
@@ -1222,11 +1245,11 @@
         google.script.run
           .withSuccessHandler(function(d) { if (d) onOk(d); else onFail("empty"); })
           .withFailureHandler(function() { onFail("network"); })
-          .getMobileWatchlistData(force === true, scope || "");
+          .getMobileWatchlistData(force === true, scope || "", currentPocket);
       } else if (apiCfg.url && apiCfg.token) {
         var u = apiCfg.url + (apiCfg.url.indexOf("?") === -1 ? "?" : "&") + "api=json" +
           "&token=" + encodeURIComponent(apiCfg.token || "") + (force === true ? "&refresh=1" : "") +
-          (scope ? "&scope=" + scope : "") + "&_=" + Date.now();
+          (scope ? "&scope=" + scope : "") + "&pocket=" + encodeURIComponent(currentPocket || "1") + "&_=" + Date.now();
         fetch(u, { cache: "no-store" })
           .then(function(r) { return r.json(); })
           .then(function(d) { if (d && d.error) onFail("auth"); else onOk(d); })
@@ -1337,7 +1360,8 @@
 
     if (!IS_GAS) document.getElementById("btn-settings").style.display = "";
 
-    if (currentData) renderUI(currentData);
+    renderPocketSwitch();
+    if (currentData && currentData.pocket === currentPocket) renderUI(currentData);
     else fetchLatestData(false);
     /* 自動刷新讀取伺服器快取 (試算表約每分鐘才更新一次)；手動按鈕才強制刷新 */
     /* 每 30 秒檢查一次：盤中、頁面在前景、已設定連線時，才自動更新「我的持股」 */
