@@ -1240,16 +1240,18 @@
     }
 
     /* ★ 讀取資料：scope = "holdings" 只抓我的持股頁所需資料；其他 = 全部 ★ */
-    function requestData(force, scope, onOk, onFail) {
+    /* pocket 省略時預設用目前畫面的 currentPocket，「全部更新」會明確指定 "1"/"2" 各抓一次 */
+    function requestData(force, scope, pocket, onOk, onFail) {
+      var pk = pocket || currentPocket;
       if (IS_GAS) {
         google.script.run
           .withSuccessHandler(function(d) { if (d) onOk(d); else onFail("empty"); })
           .withFailureHandler(function() { onFail("network"); })
-          .getMobileWatchlistData(force === true, scope || "", currentPocket);
+          .getMobileWatchlistData(force === true, scope || "", pk);
       } else if (apiCfg.url && apiCfg.token) {
         var u = apiCfg.url + (apiCfg.url.indexOf("?") === -1 ? "?" : "&") + "api=json" +
           "&token=" + encodeURIComponent(apiCfg.token || "") + (force === true ? "&refresh=1" : "") +
-          (scope ? "&scope=" + scope : "") + "&pocket=" + encodeURIComponent(currentPocket || "1") + "&_=" + Date.now();
+          (scope ? "&scope=" + scope : "") + "&pocket=" + encodeURIComponent(pk || "1") + "&_=" + Date.now();
         fetch(u, { cache: "no-store" })
           .then(function(r) { return r.json(); })
           .then(function(d) { if (d && d.error) onFail("auth"); else onOk(d); })
@@ -1259,7 +1261,9 @@
       }
     }
 
-    /* ★ 全部更新 (按鈕、首次載入)：持股、大盤、財報動態、績效全部重抓 ★ */
+    /* ★ 全部更新 (按鈕、首次載入)：持股、大盤、財報動態、績效全部重抓 ★
+       強制刷新時，不管目前在看哪個錢袋，錢袋1、錢袋2 都會一起強制重新計算，
+       這樣更新完之後不管切去哪個錢袋畫面都是最新的，不用各自再按一次 ★ */
     function fetchLatestData(force) {
       var btn = document.getElementById("btn-refresh");
       var icon = document.getElementById("btn-icon");
@@ -1267,17 +1271,41 @@
       icon.innerText = "⏳";
       label.innerText = "更新中...";
       btn.style.opacity = "0.7";
-      requestData(force, "", function(d) {
+
+      function showResult(d) {
         btn.style.opacity = "1";
         currentData = d;
         renderUI(d);
-      }, function(reason) {
+      }
+      function showFail(reason) {
         btn.style.opacity = "1";
         if (reason === "config") { icon.innerText = "⚙️"; label.innerText = "尚未設定"; openSettings(); return; }
         icon.innerText = "❌";
         if (reason === "auth") { label.innerText = "權杖錯誤"; openSettings("權杖不正確，請重新輸入"); return; }
         label.innerText = "連線失敗";
-      });
+      }
+
+      if (force === true) {
+        var results = {};
+        var remaining = 2;
+        var failReason = null;
+        function done(pk, err, d) {
+          if (!err) results[pk] = d; else failReason = failReason || err;
+          remaining--;
+          if (remaining > 0) return;
+          if (currentPocket === "1" || currentPocket === "2") {
+            if (results[currentPocket]) showResult(results[currentPocket]);
+            else showFail(failReason || "network");
+          } else {
+            // 合計畫面：底層兩個錢袋的快取都剛被強制刷新過，這裡不用再強制，直接組合最新結果即可
+            requestData(false, "", "combined", showResult, showFail);
+          }
+        }
+        requestData(true, "", "1", function(d) { done("1", null, d); }, function(r) { done("1", r, null); });
+        requestData(true, "", "2", function(d) { done("2", null, d); }, function(r) { done("2", r, null); });
+      } else {
+        requestData(force, "", currentPocket, showResult, showFail);
+      }
     }
 
     /* ★ 盤中自動更新：只更新「我的持股」(大盤、帳戶總覽、持股清單) ★ */
@@ -1285,7 +1313,7 @@
     function refreshHoldings() {
       if (autoBusy) return;
       autoBusy = true;
-      requestData(false, "holdings", function(d) {
+      requestData(false, "holdings", currentPocket, function(d) {
         autoBusy = false;
         if (!currentData) currentData = {};
         ["updateTime", "portfolio", "market", "stocks", "marketClosedToday", "intraday"].forEach(function(k) {
