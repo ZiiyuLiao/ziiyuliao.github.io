@@ -445,8 +445,12 @@
     function lsGet(k, def) { try { var v = localStorage.getItem(k); return v === null ? def : v; } catch (e) { return def; } }
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
-    /* ★ 錢袋切換 (錢袋1 / 錢袋2 / 合計)，記住上次選擇 ★ */
+    /* ★ 錢袋切換 (錢袋1 / 錢袋2 / 合計)，記住上次選擇 ★
+       dataByPocket 是本機端的「每個錢袋最後一次成功資料」快取：切換錢袋時，
+       有快取就直接秒切畫面 (不等網路)，背景再偷偷打一次更新把畫面換成最新的 ★ */
     var currentPocket = lsGet("APP_POCKET", "1");
+    var dataByPocket = {};
+    function cachePocketData(d) { if (d && d.pocket) dataByPocket[d.pocket] = d; }
     function renderPocketSwitch() {
       ["1", "2", "combined"].forEach(function(p) {
         var el = document.getElementById("btn-pocket-" + p);
@@ -458,7 +462,25 @@
       currentPocket = p;
       lsSet("APP_POCKET", p);
       renderPocketSwitch();
-      fetchLatestData(false);
+      if (dataByPocket[p]) {
+        // 已有這個錢袋的快取：立刻顯示，不等網路
+        currentData = dataByPocket[p];
+        renderUI(currentData);
+        requestData(false, "", p, function(d) {
+          cachePocketData(d);
+          if (currentPocket === p) { currentData = d; renderUI(d); }
+        }, function() {});
+      } else {
+        // 第一次切到這個錢袋，還沒有快取可用，只能先等一次
+        fetchLatestData(false);
+      }
+    }
+    /* 背景預先抓好所有錢袋的資料，之後切換就能秒切 (不影響目前畫面，失敗也不提示) */
+    function prefetchOtherPockets() {
+      ["1", "2", "combined"].forEach(function(p) {
+        if (p === currentPocket) return;
+        requestData(false, "", p, cachePocketData, function() {});
+      });
     }
 
     var currentTab = "holdings";
@@ -1275,6 +1297,7 @@
       function showResult(d) {
         btn.style.opacity = "1";
         currentData = d;
+        cachePocketData(d);
         renderUI(d);
       }
       function showFail(reason) {
@@ -1290,12 +1313,14 @@
         var remaining = 2;
         var failReason = null;
         function done(pk, err, d) {
-          if (!err) results[pk] = d; else failReason = failReason || err;
+          if (!err) { results[pk] = d; cachePocketData(d); } else failReason = failReason || err;
           remaining--;
           if (remaining > 0) return;
           if (currentPocket === "1" || currentPocket === "2") {
             if (results[currentPocket]) showResult(results[currentPocket]);
             else showFail(failReason || "network");
+            // 順便把「合計」也重新組合好放進快取，之後切過去才能秒切
+            requestData(false, "", "combined", cachePocketData, function() {});
           } else {
             // 合計畫面：底層兩個錢袋的快取都剛被強制刷新過，這裡不用再強制，直接組合最新結果即可
             requestData(false, "", "combined", showResult, showFail);
@@ -1319,6 +1344,7 @@
         ["updateTime", "portfolio", "market", "stocks", "marketClosedToday", "intraday"].forEach(function(k) {
           if (d[k] !== undefined) currentData[k] = d[k];
         });
+        cachePocketData(currentData);
         renderUI(currentData, true);
       }, function() { autoBusy = false; });
     }
@@ -1389,8 +1415,10 @@
     if (!IS_GAS) document.getElementById("btn-settings").style.display = "";
 
     renderPocketSwitch();
-    if (currentData && currentData.pocket === currentPocket) renderUI(currentData);
+    if (currentData && currentData.pocket === currentPocket) { cachePocketData(currentData); renderUI(currentData); }
     else fetchLatestData(false);
+    // 背景偷偷把其他錢袋的資料也先抓好，之後切換就能秒切畫面不用等
+    setTimeout(prefetchOtherPockets, 1500);
     /* 自動刷新讀取伺服器快取 (試算表約每分鐘才更新一次)；手動按鈕才強制刷新 */
     /* 每 30 秒檢查一次：盤中、頁面在前景、已設定連線時，才自動更新「我的持股」 */
     function canAutoRefresh() {
