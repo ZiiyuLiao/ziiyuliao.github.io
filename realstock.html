@@ -1200,6 +1200,28 @@
     }
 
     /* ★ 績效：合計頁籤 — 兩個錢袋各自一條「我的報酬」曲線疊在一起看，不做金額合併的單一曲線 ★ */
+    /* 把各錢袋的「資產曲線」依日期加總成單一合計序列 (value/today/cum 逐日相加；缺資料的錢袋當天不計入) */
+    function mergeEquityAcrossPockets_(ep, keys) {
+      var byDate = {};
+      keys.forEach(function(k) {
+        (ep[k].equity || []).forEach(function(r) {
+          if (!byDate[r.d]) byDate[r.d] = { d: r.d, value: 0, today: 0, cum: 0, hasValue: false, hasToday: false, hasCum: false, ix: null, ox: null, vix: null };
+          var row = byDate[r.d];
+          if (r.value !== null && r.value !== undefined) { row.value += r.value; row.hasValue = true; }
+          if (r.today !== null && r.today !== undefined) { row.today += r.today; row.hasToday = true; }
+          if (r.cum !== null && r.cum !== undefined) { row.cum += r.cum; row.hasCum = true; }
+          if (r.ix !== null && r.ix !== undefined) row.ix = r.ix;
+          if (r.ox !== null && r.ox !== undefined) row.ox = r.ox;
+          if (r.vix !== null && r.vix !== undefined && row.vix === null) row.vix = r.vix;
+        });
+      });
+      return Object.keys(byDate).sort().map(function(d) {
+        var row = byDate[d];
+        return { d: d, value: row.hasValue ? row.value : null, today: row.hasToday ? row.today : null, cum: row.hasCum ? row.cum : null, ix: row.ix, ox: row.ox, vix: row.vix };
+      });
+    }
+
+    /* ★ 績效：合計頁籤 — 把兩個錢袋的市值/當日損益逐日加總後，算出「單一」的合計我的報酬曲線 (跟單一錢袋頁籤同一套邏輯/畫法) ★ */
     function renderPerfCombined(data) {
       var ep = data.equityByPocket || {};
       var keys = Object.keys(ep).filter(function(k) { return ep[k] && ep[k].equity && ep[k].equity.length; });
@@ -1214,19 +1236,20 @@
       };
       if (!keys.length) { emptyState(); return; }
 
-      // 以資料最完整 (歷史最長) 的錢袋作為日期軸與大盤基準
-      var anchorKey = keys.reduce(function(a, b) { return (ep[b].equity.length > ep[a].equity.length) ? b : a; }, keys[0]);
-      var anchorAll = ep[anchorKey].equity;
-      if (anchorAll.length < 2) { emptyState(); return; }
+      var all = mergeEquityAcrossPockets_(ep, keys).filter(function(r) { return r.value !== null; });
+      if (all.length < 2) { emptyState(); return; }
+
+      var staticLegendC = document.querySelector(".perf-legend"); if (staticLegendC) staticLegendC.style.display = "";
 
       var opt = RANGE_OPTIONS.filter(function(o) { return o.key === perfRange; })[0] || RANGE_OPTIONS[1];
+      var rows = all;
       var cutoff = null;
       if (opt.key === "CUSTOM") {
         var inp = document.getElementById("custom-start");
-        var firstD = String(anchorAll[0].d).split("/").join("-"), lastD = String(anchorAll[anchorAll.length - 1].d).split("/").join("-");
+        var firstD = String(all[0].d).split("/").join("-"), lastD = String(all[all.length - 1].d).split("/").join("-");
         inp.min = firstD; inp.max = lastD;
         if (!customStart) {
-          var dflt = new Date(parseYmd(anchorAll[anchorAll.length - 1].d).getTime() - 31 * 86400000);
+          var dflt = new Date(parseYmd(all[all.length - 1].d).getTime() - 31 * 86400000);
           customStart = dflt.getFullYear() + "-" + ("0" + (dflt.getMonth() + 1)).slice(-2) + "-" + ("0" + dflt.getDate()).slice(-2);
         }
         if (customStart < firstD) customStart = firstD;
@@ -1234,87 +1257,43 @@
         inp.value = customStart;
         cutoff = parseYmd(customStart);
       } else if (opt.days > 0) {
-        var lastDate = parseYmd(anchorAll[anchorAll.length - 1].d);
+        var lastDate = parseYmd(all[all.length - 1].d);
         cutoff = new Date(lastDate.getTime() - opt.days * 86400000);
       }
-
-      var sliceByCutoff = function(allRows) {
-        if (!cutoff) return allRows;
-        var startIdx = allRows.length - 1;
-        for (var i = 0; i < allRows.length; i++) { var dt = parseYmd(allRows[i].d); if (dt && dt >= cutoff) { startIdx = i; break; } }
-        return allRows.slice(Math.max(0, startIdx - 1));
-      };
-
-      // 每個錢袋各自獨立計算「我的報酬」成長曲線 (各自以自己區間內第一筆資料為 0% 基準)
-      var perfByPocket = {};
-      keys.forEach(function(k) {
-        var rows = sliceByCutoff(ep[k].equity);
-        if (rows.length < 2) rows = ep[k].equity.slice(-2);
-        perfByPocket[k] = computePerfSeries(rows);
-      });
-      var anchorPerf = perfByPocket[anchorKey];
+      if (cutoff) {
+        var startIdx = all.length - 1;
+        for (var i = 0; i < all.length; i++) { var dt = parseYmd(all[i].d); if (dt && dt >= cutoff) { startIdx = i; break; } }
+        rows = all.slice(Math.max(0, startIdx - 1));
+      }
+      if (rows.length < 2) rows = all.slice(-2);
 
       document.getElementById("perf-period").innerText =
-        "期間 " + anchorPerf[1].d + " ～ " + anchorPerf[anchorPerf.length - 1].d + "（共 " + (anchorPerf.length - 1) + " 個交易日；各錢袋我的報酬各自以自己起始日為 0% 基準）";
+        "期間 " + rows[1].d + " ～ " + rows[rows.length - 1].d + "（以 " + rows[0].d + " 收盤為基準，共 " + (rows.length - 1) + " 個交易日；兩個錢袋市值/損益逐日加總後的合計報酬）";
+      perfPoints = computePerfSeries(rows);
+      var last = perfPoints[perfPoints.length - 1];
+      var excess = (last.ix === null) ? null : last.mine - last.ix;
+      var excessO = (last.ox === null) ? null : last.mine - last.ox;
+      var subTxt = function(v) { return '<span class="' + colorClass(v > 0, v < 0) + '">' + fmtPct(v) + '</span>'; };
 
-      var POCKET_COLORS = { "1": "#3b82f6", "2": "#22c55e" };
-      var fallbackColors = ["#a855f7", "#eab308", "#ec4899"];
+      tilesEl.innerHTML =
+        '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch" style="background:#3b82f6"></i>我的報酬（合計）</div><div class="perf-tile-val ' + colorClass(last.mine > 0, last.mine < 0) + '">' + fmtPct(last.mine) + '</div></div>' +
+        '<div class="perf-tile"><div class="perf-tile-label">超額報酬（vs 加權）</div><div class="perf-tile-val ' + colorClass(excess > 0, excess < 0) + '">' + fmtPct(excess) + '</div>' +
+          '<div class="perf-tile-sub">vs 櫃買 ' + subTxt(excessO) + '</div></div>' +
+        '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch" style="background:#d97706"></i>加權指數</div><div class="perf-tile-val ' + colorClass(last.ix > 0, last.ix < 0) + '">' + fmtPct(last.ix) + '</div></div>' +
+        '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch-dash" style="border-color:#0d9488"></i>櫃買指數</div><div class="perf-tile-val ' + colorClass(last.ox > 0, last.ox < 0) + '">' + fmtPct(last.ox) + '</div></div>';
 
-      // 合併日期軸：以 anchor 錢袋的日期為主，其他錢袋對應不到的日期留空 (線段自然斷開)
-      var idxMaps = {};
-      keys.forEach(function(k) {
-        var m = {};
-        perfByPocket[k].forEach(function(p) { m[p.d] = p; });
-        idxMaps[k] = m;
-      });
-      var mergedRows = anchorPerf.map(function(ap) {
-        var row = { d: ap.d, ix: ap.ix, ox: ap.ox, vix: ap.vix };
-        keys.forEach(function(k) {
-          var pt = idxMaps[k][ap.d];
-          row["mine_" + k] = pt ? pt.mine : null;
-          row["today_" + k] = pt ? pt.today : null;
-        });
-        return row;
-      });
+      drawPerfChart(chartEl, perfPoints);
 
-      var lineDefs = [
-        { key: "ix", color: "#d97706", dash: null, label: "加權指數" },
-        { key: "ox", color: "#0d9488", dash: "5,4", label: "櫃買指數" }
-      ];
-      keys.forEach(function(k, i) {
-        lineDefs.push({ key: "mine_" + k, color: POCKET_COLORS[k] || fallbackColors[i % fallbackColors.length], dash: null, label: (ep[k].label || ("錢袋" + k)) + " 我的報酬" });
-      });
-
-      var tilesHtml = "";
-      keys.forEach(function(k, i) {
-        var last = perfByPocket[k][perfByPocket[k].length - 1];
-        var color = POCKET_COLORS[k] || fallbackColors[i % fallbackColors.length];
-        tilesHtml += '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch" style="background:' + color + '"></i>' + esc(ep[k].label || ("錢袋" + k)) + ' 我的報酬</div><div class="perf-tile-val ' + colorClass(last.mine > 0, last.mine < 0) + '">' + fmtPct(last.mine) + '</div></div>';
-      });
-      var lastIx = anchorPerf[anchorPerf.length - 1];
-      tilesHtml +=
-        '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch" style="background:#d97706"></i>加權指數</div><div class="perf-tile-val ' + colorClass(lastIx.ix > 0, lastIx.ix < 0) + '">' + fmtPct(lastIx.ix) + '</div></div>' +
-        '<div class="perf-tile"><div class="perf-tile-label"><i class="swatch-dash" style="border-color:#0d9488"></i>櫃買指數</div><div class="perf-tile-val ' + colorClass(lastIx.ox > 0, lastIx.ox < 0) + '">' + fmtPct(lastIx.ox) + '</div></div>';
-      tilesEl.innerHTML = tilesHtml;
-
-      var staticLegendC = document.querySelector(".perf-legend"); if (staticLegendC) staticLegendC.style.display = "none";
-      drawPerfChartMulti(chartEl, mergedRows, lineDefs, anchorKey);
-
-      // 表格檢視 (最近 10 個交易日，各錢袋當日損益分欄顯示)
-      var recent = mergedRows.slice(-10).reverse();
-      var theadCols = '<th>日期</th>' + keys.map(function(k) { return '<th>' + esc(ep[k].label || ("錢袋" + k)) + ' 當日損益</th>'; }).join("");
-      var tHtml = '<table class="perf-table"><thead><tr>' + theadCols + '</tr></thead><tbody>';
+      var recent = perfPoints.slice(-10).reverse();
+      var tHtml = '<table class="perf-table"><thead><tr><th>日期</th><th>總市值</th><th>當日損益</th><th>累計損益</th></tr></thead><tbody>';
       recent.forEach(function(p) {
-        var cells = keys.map(function(k) {
-          var v = p["today_" + k];
-          return '<td class="' + colorClass(v > 0, v < 0) + '">' + (v === null ? "-" : fmtMoney(v)) + '</td>';
-        }).join("");
-        tHtml += '<tr><td>' + esc(String(p.d).slice(5)) + '</td>' + cells + '</tr>';
+        tHtml += '<tr><td>' + esc(String(p.d).slice(5)) + '</td><td>' + (p.value !== null ? Math.round(p.value).toLocaleString() : "-") + '</td>' +
+          '<td class="' + colorClass(p.today > 0, p.today < 0) + '">' + fmtMoney(p.today) + '</td>' +
+          '<td class="' + colorClass(p.cum > 0, p.cum < 0) + '">' + fmtMoney(p.cum) + '</td></tr>';
       });
       tableEl.innerHTML = tHtml + '</tbody></table>';
       var oldHistC = document.getElementById("perf-hist-card"); if (oldHistC) oldHistC.remove();
-      var histRowsC = mergedRows.map(function(r) { return { today: r["today_" + anchorKey] }; });
-      var histHtmlC = renderDailyHistogram_(histRowsC, (ep[anchorKey].label || ("錢袋" + anchorKey)) + " ");
+      var histHtmlC = renderDailyHistogram_(perfPoints, "合計");
       if (histHtmlC) tableEl.insertAdjacentHTML("afterend", histHtmlC.replace('class="perf-chart-card"', 'id="perf-hist-card" class="perf-chart-card"'));
     }
 
