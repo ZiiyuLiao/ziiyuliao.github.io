@@ -98,6 +98,11 @@
       margin-left: auto; flex-shrink: 0;
     }
     .d-rt-price { color: #94a3b8; font-weight: 600; }
+    .limit-up-price { color: #ff5252; }
+    .limit-down-price { color: #30a46c; }
+    .limit-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
+    .limit-badge.limit-up { background: rgba(255,82,82,0.22); color: #ff8080; }
+    .limit-badge.limit-down { background: rgba(48,164,108,0.22); color: #4ade80; }
     .mini-spark { display: inline-flex; width: 48px; height: 20px; margin-left: 4px; flex-shrink: 0; }
     .mini-spark svg { width: 100%; height: 100%; display: block; }
     .rt-text-up { color: #f87171; font-weight: 500; }
@@ -717,8 +722,8 @@
               '<span class="d-sub-item">成本 <b>' + esc(s.cost) + '</b></span>' +
             '</div>' +
             '<div class="d-sub-rt">' +
-              '<span>現價 <span class="d-rt-price">' + esc(s.price) + '</span></span>' +
-              '<span class="d-rt-rate ' + rtTxtClass + '">(' + esc(s.rateText) + ')</span>' +
+              '<span>現價 <span class="d-rt-price' + (s.isLimitUp ? ' limit-up-price' : (s.isLimitDown ? ' limit-down-price' : '')) + '">' + esc(s.price) + '</span></span>' +
+              (s.isLimitUp ? '<span class="limit-badge limit-up">漲停</span>' : (s.isLimitDown ? '<span class="limit-badge limit-down">跌停</span>' : '<span class="d-rt-rate ' + rtTxtClass + '">(' + esc(s.rateText) + ')</span>')) +
               (s.trend && s.trend.length > 1 ? '<span class="mini-spark">' + renderSparkline(s.trend, s.refPrice, s.isUp, s.isDown) + '</span>' : '') +
             '</div>' +
           '</div>' +
@@ -755,7 +760,7 @@
           var t = Math.max(-1, Math.min(1, rateN / 20));
           var color = t >= 0 ? "rgba(255,82,82," + (0.25 + t * 0.55).toFixed(2) + ")" : "rgba(48,164,108," + (0.25 + (-t) * 0.55).toFixed(2) + ")";
           svg += '<g><rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + Math.max(0, w - 1.5).toFixed(1) + '" height="' + Math.max(0, rowH - 1.5).toFixed(1) + '" fill="' + color + '" stroke="#0f121a" stroke-width="1" rx="4"/>' +
-            (w > 38 && rowH > 22 ? '<text x="' + (x0 + 6) + '" y="' + (y0 + 15) + '" fill="#e2e8f0" font-size="10" font-weight="700">' + esc(s.code) + '</text><text x="' + (x0 + 6) + '" y="' + (y0 + rowH - 6) + '" fill="#cbd5e1" font-size="9">' + (rateN > 0 ? "+" : "") + rateN.toFixed(1) + '%</text>' : "") + "</g>";
+            (w > 38 && rowH > 22 ? '<text x="' + (x0 + 6) + '" y="' + (y0 + 15) + '" fill="#e2e8f0" font-size="10" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text><text x="' + (x0 + 6) + '" y="' + (y0 + rowH - 6) + '" fill="#cbd5e1" font-size="9">' + (rateN > 0 ? "+" : "") + rateN.toFixed(1) + '%</text>' : "") + "</g>";
           x0 += w;
         });
         y0 += rowH;
