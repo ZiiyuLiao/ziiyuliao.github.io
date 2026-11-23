@@ -757,8 +757,12 @@
         row.items.forEach(function(s) {
           var w = W * (s.marketValueNum / row.sum);
           var rateN = parseFloat(String(s.pnlRate).replace(/[%+]/g, "")) || 0;
-          var t = Math.max(-1, Math.min(1, rateN / 20));
-          var color = t >= 0 ? "rgba(255,82,82," + (0.25 + t * 0.55).toFixed(2) + ")" : "rgba(48,164,108," + (0.25 + (-t) * 0.55).toFixed(2) + ")";
+          // 色階：盈虧幅度用開根號壓縮，讓小賺小賠也有層次，大賺大賠也不會早早就頂到同一種深色。
+          // 50% 視為「滿格」深色基準 (超過也封頂在最深)，越賺/越賠顏色越深、接近打平則顏色越淺。
+          var TREEMAP_CAP = 50;
+          var magN = Math.min(Math.abs(rateN), TREEMAP_CAP) / TREEMAP_CAP;
+          var t = (rateN >= 0 ? 1 : -1) * Math.sqrt(magN);
+          var color = t >= 0 ? "rgba(255,82,82," + (0.12 + Math.abs(t) * 0.73).toFixed(2) + ")" : "rgba(48,164,108," + (0.12 + Math.abs(t) * 0.73).toFixed(2) + ")";
           svg += '<g><rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + Math.max(0, w - 1.5).toFixed(1) + '" height="' + Math.max(0, rowH - 1.5).toFixed(1) + '" fill="' + color + '" stroke="#0f121a" stroke-width="1" rx="4"/>' +
             (w > 38 && rowH > 22 ? '<text x="' + (x0 + 6) + '" y="' + (y0 + 15) + '" fill="#e2e8f0" font-size="10" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text><text x="' + (x0 + 6) + '" y="' + (y0 + rowH - 6) + '" fill="#cbd5e1" font-size="9">' + (rateN > 0 ? "+" : "") + rateN.toFixed(1) + '%</text>' : "") + "</g>";
           x0 += w;
