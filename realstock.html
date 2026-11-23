@@ -364,6 +364,9 @@
     <div id="btn-pocket-combined" class="tab-btn" onclick="switchPocket('combined')">合計</div>
   </div>
 
+  <!-- 大盤/VIX 總覽：固定置頂，不隨頁籤切換而隱藏 -->
+  <div id="market-banner" class="market-banner"></div>
+
   <div class="nav-tabs">
     <div id="btn-tab-holdings" class="tab-btn active" onclick="switchTab('holdings')">我的持股</div>
     <div id="btn-tab-news" class="tab-btn" onclick="switchTab('news')">
@@ -377,7 +380,6 @@
 
   <!-- 持股頁籤 (極致密集、凸顯收益、可切換排序) -->
   <div id="tab-holdings" class="tab-content active">
-    <div id="market-banner" class="market-banner"></div>
     <div id="alloc-treemap-card" class="perf-chart-card" style="margin-bottom:10px;display:none">
       <div class="today-chart-label">🗺️ 資產配置圖（面積＝市值，色階＝報酬率）</div>
       <div id="alloc-treemap"></div>
@@ -751,18 +753,22 @@
         rowStocks.push(s); acc += s.marketValueNum;
         if (acc / total > 0.22 || s === sorted[sorted.length - 1]) { rows.push({ items: rowStocks, sum: acc }); rowStocks = []; acc = 0; }
       });
+      // 色階採「相對」normalize：分別找出目前所有持股裡最大獲利幅度 / 最大虧損幅度，
+      // 當作各自的「滿格深色」基準，確保不管實際報酬率落在哪個區間，最賺/最賠的一定最深、
+      // 接近打平的一定最淺，彼此之間一定拉得出看得出來的深淺差異 (不會被固定上限卡住變成同一色)。
+      var allRates = sorted.map(function(s) { return parseFloat(String(s.pnlRate).replace(/[%+]/g, "")) || 0; });
+      var maxGain = Math.max(0.01, Math.max.apply(null, allRates.filter(function(r) { return r > 0; }).concat([0])));
+      var maxLossAbs = Math.max(0.01, Math.max.apply(null, allRates.filter(function(r) { return r < 0; }).map(function(r) { return -r; }).concat([0])));
       var svg = "", y0 = 0;
       rows.forEach(function(row) {
         var rowH = H * (row.sum / total), x0 = 0;
         row.items.forEach(function(s) {
           var w = W * (s.marketValueNum / row.sum);
           var rateN = parseFloat(String(s.pnlRate).replace(/[%+]/g, "")) || 0;
-          // 色階：盈虧幅度用開根號壓縮，讓小賺小賠也有層次，大賺大賠也不會早早就頂到同一種深色。
-          // 50% 視為「滿格」深色基準 (超過也封頂在最深)，越賺/越賠顏色越深、接近打平則顏色越淺。
-          var TREEMAP_CAP = 50;
-          var magN = Math.min(Math.abs(rateN), TREEMAP_CAP) / TREEMAP_CAP;
-          var t = (rateN >= 0 ? 1 : -1) * Math.sqrt(magN);
-          var color = t >= 0 ? "rgba(255,82,82," + (0.12 + Math.abs(t) * 0.73).toFixed(2) + ")" : "rgba(48,164,108," + (0.12 + Math.abs(t) * 0.73).toFixed(2) + ")";
+          var relMag = rateN >= 0 ? (rateN / maxGain) : (-rateN / maxLossAbs); // 0~1，相對同方向最大值
+          var depth = Math.sqrt(Math.max(0, Math.min(1, relMag))); // 開根號讓小幅度也有層次
+          var opacity = (0.15 + depth * 0.70).toFixed(2);
+          var color = rateN >= 0 ? "rgba(255,82,82," + opacity + ")" : "rgba(48,164,108," + opacity + ")";
           svg += '<g><rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + Math.max(0, w - 1.5).toFixed(1) + '" height="' + Math.max(0, rowH - 1.5).toFixed(1) + '" fill="' + color + '" stroke="#0f121a" stroke-width="1" rx="4"/>' +
             (w > 38 && rowH > 22 ? '<text x="' + (x0 + 6) + '" y="' + (y0 + 15) + '" fill="#e2e8f0" font-size="10" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text><text x="' + (x0 + 6) + '" y="' + (y0 + rowH - 6) + '" fill="#cbd5e1" font-size="9">' + (rateN > 0 ? "+" : "") + rateN.toFixed(1) + '%</text>' : "") + "</g>";
           x0 += w;
