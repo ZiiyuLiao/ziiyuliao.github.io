@@ -347,6 +347,13 @@
     .alert-row-name { color: #e2e8f0; }
     .alert-row-code { color: #64748b; }
     .alert-row-detail { color: #8e94a5; }
+    /* ★ 資產配置圖：預設撐滿剩餘可視高度 (實際高度由 renderTreemap_ 用 JS 依裝置視窗計算) ★ */
+    #alloc-treemap { min-height: 360px; }
+    #alloc-treemap svg { display: block; }
+    /* ★ 資產配置圖點擊方格彈出的個股明細視窗 ★ */
+    .td-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1e2433; font-size: 13px; }
+    .td-row-label { color: #8e94a5; }
+    .td-row-value { font-weight: 700; color: #e2e8f0; }
 
     /* ================================================================
        ★ 風格切換：暖調紙感 (Warm Editorial) ★
@@ -366,6 +373,9 @@
     body.theme-paper .alert-row { border-color: #e6dabd; }
     body.theme-paper .alert-row-name { color: #2b2418; }
     body.theme-paper .alert-row-code, body.theme-paper .alert-row-detail { color: #8a7c5c; }
+    body.theme-paper .td-row { border-color: #e6dabd; }
+    body.theme-paper .td-row-label { color: #8a7c5c; }
+    body.theme-paper .td-row-value { color: #2b2418; }
     body.theme-paper .duo-item { background: rgba(122,82,48,0.08); }
     body.theme-paper .port-sub-grid { color: #8a7c5c; border-color: #e6dabd; }
     body.theme-paper .port-sub-grid b { color: #2b2418; }
@@ -476,8 +486,17 @@
   <!-- 持股頁籤 (極致密集、凸顯收益、可切換排序) -->
   <div id="tab-holdings" class="tab-content active">
     <div id="alloc-treemap-card" class="perf-chart-card" style="margin-bottom:10px;display:none">
-      <div class="today-chart-label">🗺️ 資產配置圖（面積＝市值，色階＝報酬率）</div>
+      <div class="today-chart-label">🗺️ 資產配置圖（面積＝成本，色階＝今日損益率・對成本；點方格看明細）</div>
       <div id="alloc-treemap"></div>
+    </div>
+    <div id="treemap-detail-box" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:50;">
+      <div class="modal-box" style="max-width:340px;margin:70px auto;padding:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <b id="td-title" style="font-size:14px"></b>
+          <span class="modal-close" style="cursor:pointer" onclick="closeTreemapDetail()">✕</span>
+        </div>
+        <div id="td-body"></div>
+      </div>
     </div>
     <div id="alert-card" class="perf-chart-card" style="margin-bottom:10px;display:none">
       <div class="today-chart-label" style="display:flex;justify-content:space-between;align-items:center">
@@ -647,6 +666,7 @@
         document.getElementById("tab-" + t).className = name === t ? "tab-content active" : "tab-content";
       });
       if (name === "perf") renderPerf(currentData);
+      if (name === "holdings") renderTreemap_(currentData); // 切回持股頁籤時重新量測高度 (剛才隱藏時量不到)
     }
 
     /* ★ 每日情報 ★ */
@@ -850,41 +870,56 @@
       renderAlerts_(data);
     }
 
-    /* ★ 提案1：資產配置圖 (Treemap)，面積＝市值，色階＝報酬率 ★ */
+    /* ★ 提案1：資產配置圖 (Treemap)，面積＝成本，色階＝今日損益率(對成本) ★
+       色階規則：以 10% 為門檻，0~10% 淺→中，10~20% 中→深，超過 20% 固定最深並加外框標示極端值。
+       點擊方格會彈出該檔個股的損益明細 (showTreemapDetail)。 */
+    var treemapTiles_ = []; // 目前畫面上的 tiles，index 對應 onclick 傳入的編號
+    function treemapColorFor_(rate, hasData) {
+      if (!hasData) return { fill: "rgba(148,163,184,0.22)", strong: false };
+      var abs = Math.abs(rate);
+      var depth;
+      if (abs <= 10) depth = 0.18 + (abs / 10) * 0.32;        // 0.18 → 0.50 淺
+      else if (abs <= 20) depth = 0.50 + ((abs - 10) / 10) * 0.40; // 0.50 → 0.90 深
+      else depth = 0.92;                                       // 超過 20% 封頂，改用外框標示
+      var fill = rate >= 0 ? "rgba(255,82,82," + depth.toFixed(2) + ")" : "rgba(48,164,108," + depth.toFixed(2) + ")";
+      return { fill: fill, strong: abs > 20 };
+    }
     function buildTreemapSvg_(stocks) {
-      var sorted = stocks.filter(function(s) { return s.marketValueNum > 0; }).slice().sort(function(a, b) { return b.marketValueNum - a.marketValueNum; });
+      var sorted = stocks.filter(function(s) { return s.costNum > 0; }).slice().sort(function(a, b) { return b.costNum - a.costNum; });
+      treemapTiles_ = sorted;
       if (!sorted.length) return "";
-      var total = sorted.reduce(function(s, x) { return s + x.marketValueNum; }, 0);
+      var total = sorted.reduce(function(s, x) { return s + x.costNum; }, 0);
       if (total <= 0) return "";
       var W = 376, H = 150;
       var rows = [], acc = 0, rowStocks = [];
       sorted.forEach(function(s) {
-        rowStocks.push(s); acc += s.marketValueNum;
+        rowStocks.push(s); acc += s.costNum;
         if (acc / total > 0.22 || s === sorted[sorted.length - 1]) { rows.push({ items: rowStocks, sum: acc }); rowStocks = []; acc = 0; }
       });
-      // 色階採「相對」normalize：分別找出目前所有持股裡最大獲利幅度 / 最大虧損幅度，
-      // 當作各自的「滿格深色」基準，確保不管實際報酬率落在哪個區間，最賺/最賠的一定最深、
-      // 接近打平的一定最淺，彼此之間一定拉得出看得出來的深淺差異 (不會被固定上限卡住變成同一色)。
-      var allRates = sorted.map(function(s) { return parseFloat(String(s.pnlRate).replace(/[%+]/g, "")) || 0; });
-      var maxGain = Math.max(0.01, Math.max.apply(null, allRates.filter(function(r) { return r > 0; }).concat([0])));
-      var maxLossAbs = Math.max(0.01, Math.max.apply(null, allRates.filter(function(r) { return r < 0; }).map(function(r) { return -r; }).concat([0])));
-      var svg = "", y0 = 0;
+      var isPaper = (typeof themeMode !== "undefined" && themeMode === "paper");
+      var strongStroke = isPaper ? "#b45309" : "#fbbf24";
+      var normalStroke = isPaper ? "#fffdf7" : "#0f121a";
+      var svg = "", y0 = 0, idx = 0;
       rows.forEach(function(row) {
         var rowH = H * (row.sum / total), x0 = 0;
         row.items.forEach(function(s) {
-          var w = W * (s.marketValueNum / row.sum);
-          var rateN = parseFloat(String(s.pnlRate).replace(/[%+]/g, "")) || 0;
-          var relMag = rateN >= 0 ? (rateN / maxGain) : (-rateN / maxLossAbs); // 0~1，相對同方向最大值
-          var depth = Math.sqrt(Math.max(0, Math.min(1, relMag))); // 開根號讓小幅度也有層次
-          var opacity = (0.15 + depth * 0.70).toFixed(2);
-          var color = rateN >= 0 ? "rgba(255,82,82," + opacity + ")" : "rgba(48,164,108," + opacity + ")";
-          svg += '<g><rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + Math.max(0, w - 1.5).toFixed(1) + '" height="' + Math.max(0, rowH - 1.5).toFixed(1) + '" fill="' + color + '" stroke="#0f121a" stroke-width="1" rx="4"/>' +
-            (w > 38 && rowH > 22 ? '<text x="' + (x0 + 6) + '" y="' + (y0 + 15) + '" fill="#e2e8f0" font-size="10" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text><text x="' + (x0 + 6) + '" y="' + (y0 + rowH - 6) + '" fill="#cbd5e1" font-size="9">' + (rateN > 0 ? "+" : "") + rateN.toFixed(1) + '%</text>' : "") + "</g>";
+          var w = W * (s.costNum / row.sum);
+          var hasData = s.todayPnlNum !== null && s.todayPnlNum !== undefined;
+          var rateN = hasData ? (s.todayPnlNum / s.costNum * 100) : 0;
+          var tier = treemapColorFor_(rateN, hasData);
+          var myIdx = idx++;
+          var tw = Math.max(0, w - 1.5), th = Math.max(0, rowH - 1.5);
+          svg += '<g onclick="showTreemapDetail(' + myIdx + ')" style="cursor:pointer">' +
+            '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + tw.toFixed(1) + '" height="' + th.toFixed(1) + '" fill="' + tier.fill + '" stroke="' + (tier.strong ? strongStroke : normalStroke) + '" stroke-width="' + (tier.strong ? 2.5 : 1) + '" rx="4"/>' +
+            (w > 36 && rowH > 24 ?
+              '<text x="' + (x0 + 6) + '" y="' + (y0 + 16) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text>' +
+              '<text x="' + (x0 + 6) + '" y="' + (y0 + rowH - 7) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + (hasData ? ((rateN > 0 ? "+" : "") + rateN.toFixed(1) + "%") : "—") + '</text>'
+              : "") + "</g>";
           x0 += w;
         });
         y0 += rowH;
       });
-      return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H + '">' + svg + "</svg>";
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="100%" preserveAspectRatio="none">' + svg + "</svg>";
     }
     function renderTreemap_(data) {
       var card = document.getElementById("alloc-treemap-card");
@@ -894,6 +929,41 @@
       if (!svg) { card.style.display = "none"; return; }
       el.innerHTML = svg;
       card.style.display = "";
+      // 高度預設撐滿「進頁當下剩餘的可視高度」，手機(iPhone 14 Pro Max / 16 Plus)跟電腦都不用額外展開就能看到完整地圖
+      requestAnimationFrame(function() {
+        try {
+          if (el.offsetParent === null) return; // 持股頁籤目前不可見 (display:none)，量到的位置不準，跳過
+          var top = el.getBoundingClientRect().top;
+          var avail = window.innerHeight - top - 14;
+          avail = Math.max(360, Math.min(avail, 900));
+          el.style.height = avail + "px";
+        } catch (eH) {}
+      });
+    }
+    function showTreemapDetail(idx) {
+      var s = treemapTiles_[idx];
+      if (!s) return;
+      var hasData = s.todayPnlNum !== null && s.todayPnlNum !== undefined;
+      var costRate = hasData ? (s.todayPnlNum / s.costNum * 100) : null;
+      var isCombinedView = currentData && currentData.pocket === "combined";
+      document.getElementById("td-title").textContent = (s.name || s.code) + "（" + s.code + "）" + (isCombinedView && s.pocketLabel ? "・" + s.pocketLabel : "");
+      var rows = [
+        ["現價", s.price],
+        ["今日損益", hasData ? ((s.todayPnlNum > 0 ? "+" : "") + Math.round(s.todayPnlNum).toLocaleString()) : "—"],
+        ["今日報酬率(對成本)", costRate === null ? "—" : ((costRate > 0 ? "+" : "") + costRate.toFixed(2) + "%")],
+        ["累計損益", s.pnlFormatted],
+        ["累計損益率", s.pnlRate],
+        ["成本", s.cost],
+        ["股數", s.shares],
+        ["市值", Math.round(s.marketValueNum).toLocaleString()]
+      ];
+      document.getElementById("td-body").innerHTML = rows.map(function(r) {
+        return '<div class="td-row"><span class="td-row-label">' + esc(r[0]) + '</span><span class="td-row-value">' + esc(String(r[1])) + '</span></div>';
+      }).join("");
+      document.getElementById("treemap-detail-box").style.display = "block";
+    }
+    function closeTreemapDetail() {
+      document.getElementById("treemap-detail-box").style.display = "none";
     }
 
     /* ★ 提案4：合計頁籤可切換「混合排序」或「分錢袋顯示」★ */
