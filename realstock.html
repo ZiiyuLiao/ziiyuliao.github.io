@@ -454,9 +454,9 @@
   </div>
 
   <div id="pocket-switch" class="nav-tabs" style="margin-bottom:6px">
-    <div id="btn-pocket-1" class="tab-btn active" onclick="switchPocket('1')">錢袋1</div>
+    <div id="btn-pocket-combined" class="tab-btn active" onclick="switchPocket('combined')">合計</div>
+    <div id="btn-pocket-1" class="tab-btn" onclick="switchPocket('1')">錢袋1</div>
     <div id="btn-pocket-2" class="tab-btn" onclick="switchPocket('2')">錢袋2</div>
-    <div id="btn-pocket-combined" class="tab-btn" onclick="switchPocket('combined')">合計</div>
   </div>
 
   <!-- 大盤/VIX 總覽：固定置頂，不隨頁籤切換而隱藏 -->
@@ -604,7 +604,7 @@
     /* ★ 錢袋切換 (錢袋1 / 錢袋2 / 合計)，記住上次選擇 ★
        dataByPocket 是本機端的「每個錢袋最後一次成功資料」快取：切換錢袋時，
        有快取就直接秒切畫面 (不等網路)，背景再偷偷打一次更新把畫面換成最新的 ★ */
-    var currentPocket = lsGet("APP_POCKET", "1");
+    var currentPocket = lsGet("APP_POCKET", "combined");
     var dataByPocket = {};
     function cachePocketData(d) { if (d && d.pocket) dataByPocket[d.pocket] = d; }
     function renderPocketSwitch() {
