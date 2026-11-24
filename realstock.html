@@ -332,6 +332,66 @@
     .d-intel-list { margin-top: 5px; border-top: 1px dashed #2e384d; padding-top: 4px; }
     .d-intel-item { font-size: 11px; color: #cbd5e1; padding: 2px 0; line-height: 1.4; }
     .d-intel-item a { color: #60a5fa; text-decoration: none; }
+
+    /* ================================================================
+       ★ 風格切換：暖調紙感 (Warm Editorial) ★
+       套用方式：<body class="theme-paper">，由 toggleTheme() 控制、存在裝置本機 (不影響試算表)
+       ================================================================ */
+    body.theme-paper { background: #f7f1e3; color: #3a3328; }
+    body.theme-paper .app-title { color: #2b2418; font-family: Georgia, "Noto Serif TC", serif; }
+    body.theme-paper .btn-refresh { background: #fffaf0; border-color: #d9cdb0; color: #7a5230; }
+    body.theme-paper .nav-tabs { background: #efe6d1; border-color: #ddd0b0; }
+    body.theme-paper .tab-btn { color: #8a7c5c; }
+    body.theme-paper .tab-btn.active { background: #2b2418; color: #f7f1e3; box-shadow: 0 2px 6px rgba(43,36,24,0.25); }
+    body.theme-paper .market-card,
+    body.theme-paper .dense-stock-card,
+    body.theme-paper .perf-chart-card, body.theme-paper .perf-tile,
+    body.theme-paper .comp-card, body.theme-paper .comp-header,
+    body.theme-paper .intel-card, body.theme-paper #alert-settings-box > div,
+    body.theme-paper #alloc-treemap-card, body.theme-paper #alert-card,
+    body.theme-paper .perf-table {
+      background: #fffdf7; border-color: #e6dabd; box-shadow: 0 1px 2px rgba(90,70,30,0.05);
+    }
+    body.theme-paper .market-title, body.theme-paper .port-header, body.theme-paper .perf-tile-label,
+    body.theme-paper .d-sub-item, body.theme-paper .sort-chip, body.theme-paper .range-chip,
+    body.theme-paper .stats-hint, body.theme-paper .comp-count, body.theme-paper .today-label,
+    body.theme-paper .perf-section-title, body.theme-paper .intel-sec-note, body.theme-paper .d-weight b,
+    body.theme-paper .auto-badge, body.theme-paper .time-label, body.theme-paper .perf-table th {
+      color: #8a7c5c;
+    }
+    body.theme-paper .port-card {
+      background: linear-gradient(135deg, #fffaf0 0%, #f1e6cc 100%);
+      border-color: #ddd0b0; box-shadow: 0 3px 10px rgba(90,70,30,0.08);
+    }
+    body.theme-paper .d-stock-name, body.theme-paper .comp-name,
+    body.theme-paper .today-chart-label, body.theme-paper .intel-sec-title {
+      color: #2b2418; font-family: Georgia, "Noto Serif TC", serif;
+    }
+    body.theme-paper .d-stock-code, body.theme-paper .comp-code { background: #f1e6cc; color: #8a7c5c; }
+    body.theme-paper .sort-chip, body.theme-paper .range-chip, body.theme-paper .search-input,
+    body.theme-paper .ctrl-btn, body.theme-paper .custom-date-row input {
+      background: #fffaf0; border-color: #ddd0b0; color: #8a7c5c;
+    }
+    body.theme-paper .sort-chip.active, body.theme-paper .range-chip.active {
+      background: #2b2418; color: #f7f1e3; border-color: #2b2418;
+    }
+    body.theme-paper .perf-table th, body.theme-paper .perf-table td { border-color: #e6dabd; color: #2b2418; }
+    body.theme-paper .perf-table th { color: #8a7c5c; }
+    body.theme-paper .comp-body { background: #f1e8d2; }
+    body.theme-paper .d-weight-bar { background: #e6dabd; }
+    body.theme-paper .d-weight-fill { background: #7a5230; }
+    body.theme-paper .today-row { background: #f1e6cc; }
+    body.theme-paper .rt-text-up, body.theme-paper .text-up,
+    body.theme-paper .text-deep-up, body.theme-paper .text-light-up { color: #a1402f; }
+    body.theme-paper .rt-text-down, body.theme-paper .text-down,
+    body.theme-paper .text-deep-down, body.theme-paper .text-light-down { color: #3f6b4a; }
+    body.theme-paper .pnl-badge-deep-up { background: #a1402f; color: #fffaf0; border-color: #a1402f; box-shadow: none; }
+    body.theme-paper .pnl-badge-light-up { background: rgba(161,64,47,0.10); color: #a1402f; border-color: rgba(161,64,47,0.4); }
+    body.theme-paper .pnl-badge-deep-down { background: #3f6b4a; color: #fffaf0; border-color: #3f6b4a; box-shadow: none; }
+    body.theme-paper .pnl-badge-light-down { background: rgba(63,107,74,0.10); color: #3f6b4a; border-color: rgba(63,107,74,0.4); }
+    body.theme-paper .pnl-badge-flat { background: rgba(138,124,92,0.12); color: #8a7c5c; border-color: rgba(138,124,92,0.3); }
+    body.theme-paper .limit-up-price { background: rgba(161,64,47,0.10); color: #a1402f; border-color: rgba(161,64,47,0.4); }
+    body.theme-paper .limit-down-price { background: rgba(63,107,74,0.10); color: #3f6b4a; border-color: rgba(63,107,74,0.4); }
   </style>
 </head>
 <body>
@@ -346,6 +406,7 @@
       <button id="btn-refresh" class="btn-refresh" onclick="fetchLatestData(true)" title="全部更新：持股、大盤、財報動態、績效">
         <span id="btn-icon">🔄</span><span>全部更新</span>
       </button>
+      <button id="btn-theme-toggle" class="btn-refresh" onclick="toggleTheme()" aria-label="切換風格" title="切換深色／暖調紙感風格">🎨</button>
       <button id="btn-settings" class="btn-refresh" style="display:none" onclick="openSettings()" aria-label="連線設定">⚙️</button>
     </div>
   </div>
@@ -495,6 +556,20 @@
 
     function lsGet(k, def) { try { var v = localStorage.getItem(k); return v === null ? def : v; } catch (e) { return def; } }
     function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+    /* ★ 風格切換：深色 (預設) / 暖調紙感，存在這台裝置的瀏覽器裡，不影響試算表 ★ */
+    var themeMode = lsGet("APP_THEME", "dark");
+    function applyTheme() {
+      document.body.classList.toggle("theme-paper", themeMode === "paper");
+      var btn = document.getElementById("btn-theme-toggle");
+      if (btn) btn.title = themeMode === "paper" ? "切換回深色風格" : "切換成暖調紙感風格";
+    }
+    function toggleTheme() {
+      themeMode = themeMode === "paper" ? "dark" : "paper";
+      lsSet("APP_THEME", themeMode);
+      applyTheme();
+    }
+    applyTheme();
 
     /* ★ 錢袋切換 (錢袋1 / 錢袋2 / 合計)，記住上次選擇 ★
        dataByPocket 是本機端的「每個錢袋最後一次成功資料」快取：切換錢袋時，
