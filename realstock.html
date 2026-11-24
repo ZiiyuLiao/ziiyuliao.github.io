@@ -353,7 +353,8 @@
     /* ★ 資產配置圖點擊方格彈出的個股明細視窗 ★ */
     .td-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1e2433; font-size: 13px; }
     .td-row-label { color: #8e94a5; }
-    .td-row-value { font-weight: 700; color: #e2e8f0; }
+    .td-row-value { font-weight: 700; }
+    .td-row-value-default { color: #e2e8f0; }
 
     /* ================================================================
        ★ 風格切換：暖調紙感 (Warm Editorial) ★
@@ -375,7 +376,7 @@
     body.theme-paper .alert-row-code, body.theme-paper .alert-row-detail { color: #8a7c5c; }
     body.theme-paper .td-row { border-color: #e6dabd; }
     body.theme-paper .td-row-label { color: #8a7c5c; }
-    body.theme-paper .td-row-value { color: #2b2418; }
+    body.theme-paper .td-row-value-default { color: #2b2418; }
     body.theme-paper .duo-item { background: rgba(122,82,48,0.08); }
     body.theme-paper .port-sub-grid { color: #8a7c5c; border-color: #e6dabd; }
     body.theme-paper .port-sub-grid b { color: #2b2418; }
@@ -489,8 +490,8 @@
       <div class="today-chart-label">🗺️ 資產配置圖（面積＝成本，色階＝累積報酬率・對成本；點方格看明細）</div>
       <div id="alloc-treemap"></div>
     </div>
-    <div id="treemap-detail-box" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:50;">
-      <div class="modal-box" style="max-width:340px;margin:70px auto;padding:14px;">
+    <div id="treemap-detail-box" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:50;" onclick="closeTreemapDetail()">
+      <div class="modal-box" style="max-width:340px;margin:70px auto;padding:14px;" onclick="event.stopPropagation()">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <b id="td-title" style="font-size:14px"></b>
           <span class="modal-close" style="cursor:pointer" onclick="closeTreemapDetail()">✕</span>
@@ -947,9 +948,11 @@
         remVals = restV; remIdx = restI;
       }
 
+      // 格子間用「真的留一點縫」露出底色當作分隔，而不是每格都畫一條顏色跟底色很接近的外框，
+      // 看起來比較乾淨；只有漲跌幅極端 (≥20%) 的格子才額外畫一圈顯眼的外框標示出來。
       var isPaper = (typeof themeMode !== "undefined" && themeMode === "paper");
       var strongStroke = isPaper ? "#b45309" : "#fbbf24";
-      var normalStroke = isPaper ? "#fffdf7" : "#0f121a";
+      var gap = 2.5;
       var svg = "";
       sorted.forEach(function(s, myIdx) {
         var p = allPlacements[myIdx];
@@ -958,12 +961,14 @@
         var hasData = s.pnlRateNum !== null && s.pnlRateNum !== undefined;
         var rateN = hasData ? s.pnlRateNum : 0;
         var tier = treemapColorFor_(rateN, hasData);
-        var tw = Math.max(0, w0 - 1.5), th = Math.max(0, rh - 1.5);
+        var tw = Math.max(0, w0 - gap), th = Math.max(0, rh - gap);
+        var rx0 = x0 + gap / 2, ry0 = y0 + gap / 2;
+        var strokeAttr = tier.strong ? (' stroke="' + strongStroke + '" stroke-width="2"') : "";
         svg += '<g onclick="showTreemapDetail(' + myIdx + ')" style="cursor:pointer">' +
-          '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + tw.toFixed(1) + '" height="' + th.toFixed(1) + '" fill="' + tier.fill + '" stroke="' + (tier.strong ? strongStroke : normalStroke) + '" stroke-width="' + (tier.strong ? 2.5 : 1) + '" rx="4"/>' +
+          '<rect x="' + rx0.toFixed(1) + '" y="' + ry0.toFixed(1) + '" width="' + tw.toFixed(1) + '" height="' + th.toFixed(1) + '" fill="' + tier.fill + '"' + strokeAttr + ' rx="3"/>' +
           (w0 > 36 && rh > 24 ?
-            '<text x="' + (x0 + 6) + '" y="' + (y0 + 16) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text>' +
-            '<text x="' + (x0 + 6) + '" y="' + (y0 + rh - 7) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + (hasData ? ((rateN > 0 ? "+" : "") + rateN.toFixed(1) + "%") : "—") + '</text>'
+            '<text x="' + (rx0 + 6) + '" y="' + (ry0 + 16) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text>' +
+            '<text x="' + (rx0 + 6) + '" y="' + (ry0 + th - 7) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + (hasData ? ((rateN > 0 ? "+" : "") + rateN.toFixed(1) + "%") : "—") + '</text>'
             : "") + "</g>";
       });
       return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="100%">' + svg + "</svg>";
@@ -996,18 +1001,25 @@
       var costRate = hasData ? (s.todayPnlNum / s.costNum * 100) : null;
       var isCombinedView = currentData && currentData.pocket === "combined";
       document.getElementById("td-title").textContent = (s.name || s.code) + "（" + s.code + "）" + (isCombinedView && s.pocketLabel ? "・" + s.pocketLabel : "");
+      // 顏色規則跟下方個股清單一致：今日損益用漲跌色 (text-up/text-down)，
+      // 累計損益/累計損益率用跟清單同一個四階色階 (getPnlTier)，不是自己另外一套顏色。
+      var todayCls = "td-row-value-default";
+      if (hasData) {
+        todayCls = s.todayPnlNum > 0 ? "text-up" : (s.todayPnlNum < 0 ? "text-down" : "text-flat");
+      }
+      var pnlTier = getPnlTier(s.pnlRate);
       var rows = [
-        ["現價", s.price],
-        ["今日損益", hasData ? ((s.todayPnlNum > 0 ? "+" : "") + Math.round(s.todayPnlNum).toLocaleString()) : "—"],
-        ["今日報酬率(對成本)", costRate === null ? "—" : ((costRate > 0 ? "+" : "") + costRate.toFixed(2) + "%")],
-        ["累計損益", s.pnlFormatted],
-        ["累計損益率", s.pnlRate],
-        ["成本", s.cost],
-        ["股數", s.shares],
-        ["市值", Math.round(s.marketValueNum).toLocaleString()]
+        ["現價", s.price, "td-row-value-default"],
+        ["今日損益", hasData ? ((s.todayPnlNum > 0 ? "+" : "") + Math.round(s.todayPnlNum).toLocaleString()) : "—", todayCls],
+        ["今日報酬率(對成本)", costRate === null ? "—" : ((costRate > 0 ? "+" : "") + costRate.toFixed(2) + "%"), todayCls],
+        ["累計損益", s.pnlFormatted, pnlTier.textClass],
+        ["累計損益率", s.pnlRate, pnlTier.textClass],
+        ["成本", s.cost, "td-row-value-default"],
+        ["股數", s.shares, "td-row-value-default"],
+        ["市值", Math.round(s.marketValueNum).toLocaleString(), "td-row-value-default"]
       ];
       document.getElementById("td-body").innerHTML = rows.map(function(r) {
-        return '<div class="td-row"><span class="td-row-label">' + esc(r[0]) + '</span><span class="td-row-value">' + esc(String(r[1])) + '</span></div>';
+        return '<div class="td-row"><span class="td-row-label">' + esc(r[0]) + '</span><span class="td-row-value ' + r[2] + '">' + esc(String(r[1])) + '</span></div>';
       }).join("");
       document.getElementById("treemap-detail-box").style.display = "block";
     }
