@@ -333,13 +333,42 @@
     .d-intel-item { font-size: 11px; color: #cbd5e1; padding: 2px 0; line-height: 1.4; }
     .d-intel-item a { color: #60a5fa; text-decoration: none; }
 
+    /* ★ 彈窗共用樣式 (價格警示設定視窗等) ★ */
+    .modal-box { background: #0f121a; border: 1px solid #2e384d; border-radius: 12px; }
+    .modal-close { color: #8e94a5; }
+    .modal-hint { color: #64748b; }
+    .modal-input { background: #141721; color: #e2e8f0; border: 1px solid #2e384d; border-radius: 6px; padding: 6px; }
+    /* ★ 錢袋標籤徽章 (合計頁籤的持股列表上，標示這檔股票屬於哪個錢袋) ★ */
+    .d-pocket-chip { background: #20304a; color: #93c5fd; }
+    /* ★ 主要動作按鈕 (例如連線設定裡的「儲存並連線」) ★ */
+    .btn-primary-action { color: #fff; background: #2563eb; border-color: #2563eb; }
+    /* ★ 價格警示清單單列 ★ */
+    .alert-row { border-bottom: 1px solid #1e2433; }
+    .alert-row-name { color: #e2e8f0; }
+    .alert-row-code { color: #64748b; }
+    .alert-row-detail { color: #8e94a5; }
+
     /* ================================================================
        ★ 風格切換：暖調紙感 (Warm Editorial) ★
        套用方式：<body class="theme-paper">，由 toggleTheme() 控制、存在裝置本機 (不影響試算表)
        ================================================================ */
     body.theme-paper { background: #f7f1e3; color: #3a3328; }
-    body.theme-paper .app-title { color: #2b2418; font-family: Georgia, "Noto Serif TC", serif; }
+    body.theme-paper .app-title {
+      color: #2b2418;
+      font-family: "Songti TC", "PMingLiU", "Noto Serif TC", Georgia, serif;
+    }
     body.theme-paper .btn-refresh { background: #fffaf0; border-color: #d9cdb0; color: #7a5230; }
+    body.theme-paper .btn-primary-action { color: #fffaf0; background: #7a5230; border-color: #7a5230; }
+    body.theme-paper .d-pocket-chip { background: #e3d8b8; color: #6b5a38; }
+    body.theme-paper .modal-box { background: #fffdf7; border-color: #e6dabd; }
+    body.theme-paper .modal-close, body.theme-paper .modal-hint { color: #8a7c5c; }
+    body.theme-paper .modal-input { background: #fffaf0; color: #3a3328; border-color: #ddd0b0; }
+    body.theme-paper .alert-row { border-color: #e6dabd; }
+    body.theme-paper .alert-row-name { color: #2b2418; }
+    body.theme-paper .alert-row-code, body.theme-paper .alert-row-detail { color: #8a7c5c; }
+    body.theme-paper .duo-item { background: rgba(122,82,48,0.08); }
+    body.theme-paper .port-sub-grid { color: #8a7c5c; border-color: #e6dabd; }
+    body.theme-paper .port-sub-grid b { color: #2b2418; }
     body.theme-paper .nav-tabs { background: #efe6d1; border-color: #ddd0b0; }
     body.theme-paper .tab-btn { color: #8a7c5c; }
     body.theme-paper .tab-btn.active { background: #2b2418; color: #f7f1e3; box-shadow: 0 2px 6px rgba(43,36,24,0.25); }
@@ -365,7 +394,8 @@
     }
     body.theme-paper .d-stock-name, body.theme-paper .comp-name,
     body.theme-paper .today-chart-label, body.theme-paper .intel-sec-title {
-      color: #2b2418; font-family: Georgia, "Noto Serif TC", serif;
+      color: #2b2418;
+      font-family: "Songti TC", "PMingLiU", "Noto Serif TC", Georgia, serif;
     }
     body.theme-paper .d-stock-code, body.theme-paper .comp-code { background: #f1e6cc; color: #8a7c5c; }
     body.theme-paper .sort-chip, body.theme-paper .range-chip, body.theme-paper .search-input,
@@ -418,7 +448,7 @@
     <input id="cfg-token" class="search-input" style="margin-bottom:8px" placeholder="存取權杖 WEBAPP_TOKEN">
     <div style="display:flex;gap:6px;justify-content:flex-end">
       <button class="ctrl-btn" onclick="closeSettings()">取消</button>
-      <button class="ctrl-btn" style="color:#fff;background:#2563eb;border-color:#2563eb" onclick="saveSettings()">儲存並連線</button>
+      <button class="ctrl-btn btn-primary-action" onclick="saveSettings()">儲存並連線</button>
     </div>
     <div id="cfg-msg" class="today-note" style="margin-top:6px"></div>
   </div>
@@ -466,24 +496,24 @@
 
     <!-- 價格警示設定視窗 -->
     <div id="alert-settings-box" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:50;">
-      <div style="background:#0f121a;border:1px solid #2e384d;border-radius:12px;max-width:380px;margin:60px auto;padding:14px;max-height:75vh;overflow:auto;">
+      <div class="modal-box" style="max-width:380px;margin:60px auto;padding:14px;max-height:75vh;overflow:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
           <b style="font-size:14px">價格警示設定</b>
-          <span style="cursor:pointer;color:#8e94a5" onclick="closeAlertSettings()">✕</span>
+          <span class="modal-close" style="cursor:pointer" onclick="closeAlertSettings()">✕</span>
         </div>
         <div id="alert-rule-list"></div>
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-          <select id="ar-code" style="flex:1;min-width:90px;background:#141721;color:#e2e8f0;border:1px solid #2e384d;border-radius:6px;padding:6px;"></select>
-          <select id="ar-type" style="background:#141721;color:#e2e8f0;border:1px solid #2e384d;border-radius:6px;padding:6px;">
+          <select id="ar-code" class="modal-input" style="flex:1;min-width:90px;"></select>
+          <select id="ar-type" class="modal-input">
             <option value="price_below">跌破價格</option>
             <option value="price_above">漲破價格</option>
             <option value="rate_below">虧損率低於(%)</option>
             <option value="rate_above">報酬率高於(%)</option>
           </select>
-          <input id="ar-value" type="number" step="0.01" placeholder="數值" style="width:80px;background:#141721;color:#e2e8f0;border:1px solid #2e384d;border-radius:6px;padding:6px;">
+          <input id="ar-value" type="number" step="0.01" placeholder="數值" class="modal-input" style="width:80px;">
           <button class="range-chip active" style="flex:0 0 auto" onclick="addAlertRule()">新增</button>
         </div>
-        <div style="font-size:11px;color:#64748b;margin-top:8px">規則儲存在這台裝置的瀏覽器裡 (不會同步到試算表)，觸發時會顯示在持股頁上方的警示區塊。</div>
+        <div class="modal-hint" style="font-size:11px;margin-top:8px">規則儲存在這台裝置的瀏覽器裡 (不會同步到試算表)，觸發時會顯示在持股頁上方的警示區塊。</div>
       </div>
     </div>
   </div>
@@ -787,7 +817,7 @@
             '<div class="d-info-left">' +
               '<span class="d-stock-name">' + esc(s.name) + '</span>' +
               '<span class="d-stock-code">' + esc(s.code) + '</span>' +
-              (data && data.pocket === "combined" && s.pocketLabel ? '<span class="d-stock-code" style="background:#20304a;color:#93c5fd">' + esc(s.pocketLabel) + '</span>' : '') + iBadge +
+              (data && data.pocket === "combined" && s.pocketLabel ? '<span class="d-stock-code d-pocket-chip">' + esc(s.pocketLabel) + '</span>' : '') + iBadge +
             '</div>' +
             '<div class="d-pnl-right">' +
               '<span class="d-pnl-amount ' + pnlTier.textClass + '">' + esc(s.pnlFormatted) + '</span>' +
@@ -971,9 +1001,9 @@
         var icon = !x.ok ? "⚪" : (x.triggered ? (x.r.type.indexOf("above") > -1 ? "🟢" : "🔴") : "⚪");
         var cls = x.triggered ? (x.r.type.indexOf("above") > -1 ? "text-up" : "text-down") : "text-flat";
         var name = x.s ? x.s.name : x.r.code;
-        return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1e2433;">' +
-          '<span style="font-size:13px">' + icon + '</span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;color:#e2e8f0">' + esc(name) + ' <span style="color:#64748b;font-weight:400">' + esc(x.r.code) + '</span></div>' +
-          '<div style="font-size:11px;color:#8e94a5;margin-top:2px" class="' + cls + '">' + esc(x.detail || x.reason || "") + '</div></div></div>';
+        return '<div class="alert-row" style="display:flex;align-items:center;gap:8px;padding:6px 0;">' +
+          '<span style="font-size:13px">' + icon + '</span><div style="flex:1;min-width:0"><div class="alert-row-name" style="font-size:12px;font-weight:700;">' + esc(name) + ' <span class="alert-row-code" style="font-weight:400">' + esc(x.r.code) + '</span></div>' +
+          '<div class="alert-row-detail ' + cls + '" style="font-size:11px;margin-top:2px">' + esc(x.detail || x.reason || "") + '</div></div></div>';
       }).join("");
       document.getElementById("alert-list").innerHTML = html;
       card.style.display = "";
@@ -1613,7 +1643,9 @@
       if (diff === 0) diff = ref * 0.005;
       var yMin = ref - diff, yMax = ref + diff;
       var w = 100, h = 36;
-      var strokeColor = isUp ? "#ff5252" : (isDown ? "#4caf50" : "#94a3b8");
+      var isPaper = (typeof themeMode !== "undefined" && themeMode === "paper");
+      var strokeColor = isUp ? (isPaper ? "#a1402f" : "#ff5252") : (isDown ? (isPaper ? "#3f6b4a" : "#4caf50") : "#94a3b8");
+      var refLineColor = isPaper ? "#c9b98f" : "#374151";
       var refY = h - ((ref - yMin) / (yMax - yMin) * h);
       var pts = [];
       for (var i = 0; i < prices.length; i++) {
@@ -1621,7 +1653,7 @@
         var y = h - ((prices[i] - yMin) / (yMax - yMin) * h);
         pts.push(x.toFixed(1) + "," + y.toFixed(1));
       }
-      return '<svg viewBox="0 0 ' + w + ' ' + h + '"><line x1="0" y1="' + refY.toFixed(1) + '" x2="' + w + '" y2="' + refY.toFixed(1) + '" stroke="#374151" stroke-dasharray="2,2" stroke-width="1"/><polyline fill="none" stroke="' + strokeColor + '" stroke-width="2" points="' + pts.join(" ") + '"/></svg>';
+      return '<svg viewBox="0 0 ' + w + ' ' + h + '"><line x1="0" y1="' + refY.toFixed(1) + '" x2="' + w + '" y2="' + refY.toFixed(1) + '" stroke="' + refLineColor + '" stroke-dasharray="2,2" stroke-width="1"/><polyline fill="none" stroke="' + strokeColor + '" stroke-width="2" points="' + pts.join(" ") + '"/></svg>';
     }
 
     /* ★ 收益四段階梯色階判定 ★ */
