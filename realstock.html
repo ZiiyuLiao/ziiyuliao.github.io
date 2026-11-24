@@ -1934,7 +1934,9 @@
       }, function() { autoBusy = false; });
     }
 
-    /* 台北時間是否在盤中 (週一~五 09:00~13:35)；今日確定休市則不更新 */
+    /* 台北時間是否在盤中 (週一~五 09:00~13:50)；今日確定休市則不更新。
+       13:50 (而非 13:30/13:35) 是配合後端同步截止點延後的理由：VIX 在收盤前後官方報價
+       本身會有一段修正，太早停止自動刷新會讓網頁卡在修正前的舊數字。 */
     function taipeiNow() {
       var n = new Date();
       return new Date(n.getTime() + n.getTimezoneOffset() * 60000 + 8 * 3600000);
@@ -1949,7 +1951,7 @@
       var t = taipeiNow();
       var dow = t.getDay(), hm = t.getHours() * 100 + t.getMinutes();
       if (dow === 0 || dow === 6) return false;
-      if (hm < 900 || hm > 1335) return false;
+      if (hm < 900 || hm > 1350) return false;
       return true;
     }
     function updateAutoBadge() {
