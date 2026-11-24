@@ -887,61 +887,107 @@
       var fill = rate >= 0 ? "rgba(255,82,82," + depth.toFixed(2) + ")" : "rgba(48,164,108," + depth.toFixed(2) + ")";
       return { fill: fill, strong: abs >= 20 };
     }
-    function buildTreemapSvg_(stocks) {
+    function buildTreemapSvg_(stocks, W, H) {
+      // W/H 用容器「實際」寬高 (由 renderTreemap_ 量測後傳入)。
+      // 排版改用標準的「Squarified Treemap」演算法 (Bruls/Huizing/van Wijk)：
+      // 每次從剩下的格子裡，沿著容器目前較短的那一邊切一整排/列出來，排的時候動態決定
+      // 這一排要放幾檔，讓這一排裡每一格的寬高比盡量逼近 1:1 (正方形)，排完再對剩下的
+      // 容器範圍重複同樣的程序。這樣不管是大檔(台積電)還是小檔，格子都會盡量呈現正方形，
+      // 而不是像之前那樣整排共用同一個「固定列高」。
+      W = W || 360; H = H || 420;
       var sorted = stocks.filter(function(s) { return s.costNum > 0; }).slice().sort(function(a, b) { return b.costNum - a.costNum; });
       treemapTiles_ = sorted;
       if (!sorted.length) return "";
       var total = sorted.reduce(function(s, x) { return s + x.costNum; }, 0);
       if (total <= 0) return "";
-      var W = 376, H = 150;
-      var rows = [], acc = 0, rowStocks = [];
-      sorted.forEach(function(s) {
-        rowStocks.push(s); acc += s.costNum;
-        if (acc / total > 0.22 || s === sorted[sorted.length - 1]) { rows.push({ items: rowStocks, sum: acc }); rowStocks = []; acc = 0; }
-      });
+
+      // 一排裡「最差寬高比」：越接近 1 代表這一排的格子越接近正方形。
+      function worstRatio(row, sideLen) {
+        var sum = 0, max = -Infinity, min = Infinity;
+        row.forEach(function(v) { sum += v; if (v > max) max = v; if (v < min) min = v; });
+        var s2 = sum * sum, l2 = sideLen * sideLen;
+        return Math.max((l2 * max) / s2, s2 / (l2 * min));
+      }
+      // 把一整排 (沿容器較短邊切出來) 的格子，在那個方向上依面積比例切成一條條矩形。
+      function layoutRow(row, x, y, w, h, vertical) {
+        var rowSum = row.reduce(function(a, b) { return a + b; }, 0);
+        var placements = [], rect;
+        if (vertical) {
+          var colW = rowSum / h, yy = y;
+          row.forEach(function(v) { var rh = v / colW; placements.push({ x: x, y: yy, w: colW, h: rh }); yy += rh; });
+          rect = { x: x + colW, y: y, w: w - colW, h: h };
+        } else {
+          var rowH = rowSum / w, xx = x;
+          row.forEach(function(v) { var rw = v / rowH; placements.push({ x: xx, y: y, w: rw, h: rowH }); xx += rw; });
+          rect = { x: x, y: y + rowH, w: w, h: h - rowH };
+        }
+        return { placements: placements, rect: rect };
+      }
+
+      // 把每檔的成本換算成「面積」，總和等於容器面積 (W*H)，面積＝成本的比例才會成立。
+      var scale = (W * H) / total;
+      var areas = sorted.map(function(s) { return Math.max(0.01, s.costNum * scale); });
+      var allPlacements = new Array(sorted.length);
+      var x = 0, y = 0, w = W, h = H;
+      var remVals = areas.slice(), remIdx = areas.map(function(_, i) { return i; });
+      while (remVals.length && w > 0.5 && h > 0.5) {
+        var vertical = w >= h; // 容器較寬就切一條直的「欄」(沿高度排滿)，較高就切一條橫的「列」(沿寬度排滿)
+        var sideLen = vertical ? h : w;
+        var row = [remVals[0]], rowIdx = [remIdx[0]];
+        var restV = remVals.slice(1), restI = remIdx.slice(1);
+        while (restV.length) {
+          var testRow = row.concat([restV[0]]);
+          if (worstRatio(testRow, sideLen) <= worstRatio(row, sideLen)) {
+            row = testRow; rowIdx.push(restI[0]); restV = restV.slice(1); restI = restI.slice(1);
+          } else break;
+        }
+        var laid = layoutRow(row, x, y, w, h, vertical);
+        laid.placements.forEach(function(p, i) { allPlacements[rowIdx[i]] = p; });
+        x = laid.rect.x; y = laid.rect.y; w = laid.rect.w; h = laid.rect.h;
+        remVals = restV; remIdx = restI;
+      }
+
       var isPaper = (typeof themeMode !== "undefined" && themeMode === "paper");
       var strongStroke = isPaper ? "#b45309" : "#fbbf24";
       var normalStroke = isPaper ? "#fffdf7" : "#0f121a";
-      var svg = "", y0 = 0, idx = 0;
-      rows.forEach(function(row) {
-        var rowH = H * (row.sum / total), x0 = 0;
-        row.items.forEach(function(s) {
-          var w = W * (s.costNum / row.sum);
-          var hasData = s.pnlRateNum !== null && s.pnlRateNum !== undefined;
-          var rateN = hasData ? s.pnlRateNum : 0;
-          var tier = treemapColorFor_(rateN, hasData);
-          var myIdx = idx++;
-          var tw = Math.max(0, w - 1.5), th = Math.max(0, rowH - 1.5);
-          svg += '<g onclick="showTreemapDetail(' + myIdx + ')" style="cursor:pointer">' +
-            '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + tw.toFixed(1) + '" height="' + th.toFixed(1) + '" fill="' + tier.fill + '" stroke="' + (tier.strong ? strongStroke : normalStroke) + '" stroke-width="' + (tier.strong ? 2.5 : 1) + '" rx="4"/>' +
-            (w > 36 && rowH > 24 ?
-              '<text x="' + (x0 + 6) + '" y="' + (y0 + 16) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text>' +
-              '<text x="' + (x0 + 6) + '" y="' + (y0 + rowH - 7) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + (hasData ? ((rateN > 0 ? "+" : "") + rateN.toFixed(1) + "%") : "—") + '</text>'
-              : "") + "</g>";
-          x0 += w;
-        });
-        y0 += rowH;
+      var svg = "";
+      sorted.forEach(function(s, myIdx) {
+        var p = allPlacements[myIdx];
+        if (!p) return;
+        var x0 = p.x, y0 = p.y, w0 = p.w, rh = p.h;
+        var hasData = s.pnlRateNum !== null && s.pnlRateNum !== undefined;
+        var rateN = hasData ? s.pnlRateNum : 0;
+        var tier = treemapColorFor_(rateN, hasData);
+        var tw = Math.max(0, w0 - 1.5), th = Math.max(0, rh - 1.5);
+        svg += '<g onclick="showTreemapDetail(' + myIdx + ')" style="cursor:pointer">' +
+          '<rect x="' + x0.toFixed(1) + '" y="' + y0.toFixed(1) + '" width="' + tw.toFixed(1) + '" height="' + th.toFixed(1) + '" fill="' + tier.fill + '" stroke="' + (tier.strong ? strongStroke : normalStroke) + '" stroke-width="' + (tier.strong ? 2.5 : 1) + '" rx="4"/>' +
+          (w0 > 36 && rh > 24 ?
+            '<text x="' + (x0 + 6) + '" y="' + (y0 + 16) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + esc(String(s.name || s.code).length > 6 ? String(s.name || s.code).slice(0, 6) + "…" : (s.name || s.code)) + '</text>' +
+            '<text x="' + (x0 + 6) + '" y="' + (y0 + rh - 7) + '" fill="#fff" stroke="#000" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" font-size="11" font-weight="700">' + (hasData ? ((rateN > 0 ? "+" : "") + rateN.toFixed(1) + "%") : "—") + '</text>'
+            : "") + "</g>";
       });
-      return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="100%" preserveAspectRatio="none">' + svg + "</svg>";
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="100%">' + svg + "</svg>";
     }
     function renderTreemap_(data) {
       var card = document.getElementById("alloc-treemap-card");
       var el = document.getElementById("alloc-treemap");
       var stocks = (data && data.stocks) || [];
-      var svg = buildTreemapSvg_(stocks);
+      if (!stocks.some(function(s) { return s.costNum > 0; })) { card.style.display = "none"; return; }
+      card.style.display = "";
+      // 先量測/設定容器高度 (撐滿進頁當下剩餘的可視高度，手機跟電腦都不用額外展開)，
+      // 再用「量到的實際寬高」去排版，Squarified 演算法本身就會依照這個寬高比盡量排出正方形。
+      var measuredW = el.clientWidth, measuredH = el.clientHeight;
+      if (el.offsetParent !== null) {
+        var top = el.getBoundingClientRect().top;
+        var avail = window.innerHeight - top - 14;
+        avail = Math.max(360, Math.min(avail, 900));
+        el.style.height = avail + "px";
+        measuredW = el.clientWidth || measuredW;
+        measuredH = avail;
+      }
+      var svg = buildTreemapSvg_(stocks, measuredW, measuredH);
       if (!svg) { card.style.display = "none"; return; }
       el.innerHTML = svg;
-      card.style.display = "";
-      // 高度預設撐滿「進頁當下剩餘的可視高度」，手機(iPhone 14 Pro Max / 16 Plus)跟電腦都不用額外展開就能看到完整地圖
-      requestAnimationFrame(function() {
-        try {
-          if (el.offsetParent === null) return; // 持股頁籤目前不可見 (display:none)，量到的位置不準，跳過
-          var top = el.getBoundingClientRect().top;
-          var avail = window.innerHeight - top - 14;
-          avail = Math.max(360, Math.min(avail, 900));
-          el.style.height = avail + "px";
-        } catch (eH) {}
-      });
     }
     function showTreemapDetail(idx) {
       var s = treemapTiles_[idx];
