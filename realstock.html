@@ -98,11 +98,15 @@
       margin-left: auto; flex-shrink: 0;
     }
     .d-rt-price { color: #94a3b8; font-weight: 600; }
-    .limit-up-price { color: #ff5252; }
-    .limit-down-price { color: #30a46c; }
-    .limit-badge { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; }
-    .limit-badge.limit-up { background: rgba(255,82,82,0.22); color: #ff8080; }
-    .limit-badge.limit-down { background: rgba(48,164,108,0.22); color: #4ade80; }
+    /* 漲停/跌停：跟損益率徽章一樣用框 (邊框+淡底色) 標示，不再佔用漲跌率的顯示位置 */
+    .limit-up-price {
+      color: #f87171; font-weight: 800; background: rgba(239,68,68,0.18);
+      border: 1px solid rgba(239,68,68,0.55); border-radius: 6px; padding: 0 6px;
+    }
+    .limit-down-price {
+      color: #4ade80; font-weight: 800; background: rgba(34,197,94,0.16);
+      border: 1px solid rgba(34,197,94,0.55); border-radius: 6px; padding: 0 6px;
+    }
     .mini-spark { display: inline-flex; width: 48px; height: 20px; margin-left: 4px; flex-shrink: 0; }
     .mini-spark svg { width: 100%; height: 100%; display: block; }
     .rt-text-up { color: #f87171; font-weight: 500; }
@@ -725,7 +729,7 @@
             '</div>' +
             '<div class="d-sub-rt">' +
               '<span>現價 <span class="d-rt-price' + (s.isLimitUp ? ' limit-up-price' : (s.isLimitDown ? ' limit-down-price' : '')) + '">' + esc(s.price) + '</span></span>' +
-              (s.isLimitUp ? '<span class="limit-badge limit-up">漲停</span>' : (s.isLimitDown ? '<span class="limit-badge limit-down">跌停</span>' : '<span class="d-rt-rate ' + rtTxtClass + '">(' + esc(s.rateText) + ')</span>')) +
+              '<span class="d-rt-rate ' + rtTxtClass + '">(' + esc(s.rateText) + ')</span>' +
               (s.trend && s.trend.length > 1 ? '<span class="mini-spark">' + renderSparkline(s.trend, s.refPrice, s.isUp, s.isDown) + '</span>' : '') +
             '</div>' +
           '</div>' +
