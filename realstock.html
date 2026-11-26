@@ -1035,7 +1035,9 @@
     function renderTreemap_(data) {
       var card = document.getElementById("alloc-treemap-card");
       var el = document.getElementById("alloc-treemap");
-      var stocks = (data && data.stocks) || [];
+      // 合計頁一律合併同股票跨錢袋的持股 (不受下方「混合排序／分錢袋顯示」切換影響)，
+      // 避免同一檔股票在方格圖裡被拆成兩格。
+      var stocks = (data && data.pocket === "combined") ? mergeStocksByCode_(data.stocks || []) : ((data && data.stocks) || []);
       if (!stocks.some(function(s) { return s.costNum > 0; })) { card.style.display = "none"; return; }
       card.style.display = "";
       // 先量測/設定容器高度 (撐滿進頁當下剩餘的可視高度，手機跟電腦都不用額外展開)，
