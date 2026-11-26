@@ -798,11 +798,70 @@
 
     function colorClass(isUp, isDown) { return isUp ? "text-up" : (isDown ? "text-down" : "text-flat"); }
 
+    /* ★ 合計頁「混合排序」：同一檔股票如果錢袋1、錢袋2都有持股，合併成一列計算 (股數/成本/
+       市值/損益直接加總，均價、報酬率、今日損益率、權重則用合併後的數字重新算一次)，
+       而不是像之前一樣同一檔股票在清單裡出現兩次。「分錢袋顯示」模式則維持原本各錢袋分開，
+       不套用這個合併，所以這個函式只在 renderStocks 判斷為「合計 + 混合排序」時才會被呼叫。★ */
+    function mergeStocksByCode_(stocks) {
+      var groups = {}, order = [];
+      stocks.forEach(function(s) {
+        var key = s.code || s.name;
+        if (!groups[key]) { groups[key] = []; order.push(key); }
+        groups[key].push(s);
+      });
+      var merged = order.map(function(key) {
+        var group = groups[key];
+        if (group.length === 1) return group[0];
+        var first = group[0];
+        var sharesNum = 0, costNum = 0, marketValueNum = 0;
+        var todayPnlNum = null, hasTodayPnl = false;
+        var labels = [];
+        group.forEach(function(s) {
+          sharesNum += s.sharesNum || 0;
+          costNum += s.costNum || 0;
+          marketValueNum += (s.marketValueNum !== undefined && s.marketValueNum !== null) ? s.marketValueNum : s.costNum;
+          if (s.todayPnlNum !== null && s.todayPnlNum !== undefined) { todayPnlNum = (todayPnlNum || 0) + s.todayPnlNum; hasTodayPnl = true; }
+          if (s.pocketLabel && labels.indexOf(s.pocketLabel) === -1) labels.push(s.pocketLabel);
+        });
+        var pnlNum = marketValueNum - costNum;
+        var pnlRateNum = costNum > 0 ? (pnlNum / costNum * 100) : null;
+        var avgPriceNum = sharesNum > 0 ? (costNum / sharesNum) : 0;
+        return Object.assign({}, first, {
+          shares: sharesNum > 0 ? sharesNum.toLocaleString() : "-",
+          sharesNum: sharesNum,
+          cost: costNum > 0 ? costNum.toLocaleString() : "-",
+          costNum: costNum,
+          avgPrice: avgPriceNum > 0 ? avgPriceNum.toFixed(2) : "-",
+          marketValueNum: marketValueNum,
+          pnlFormatted: (pnlNum > 0 ? "+" : "") + Math.round(pnlNum).toLocaleString(),
+          pnlRate: pnlRateNum === null ? "-" : ((pnlRateNum > 0 ? "+" : "") + pnlRateNum.toFixed(2) + "%"),
+          pnlRateNum: pnlRateNum,
+          isProfit: pnlNum > 0,
+          isLoss: pnlNum < 0,
+          todayPnlText: hasTodayPnl ? ((todayPnlNum > 0 ? "+" : "") + Math.round(todayPnlNum).toLocaleString()) : "-",
+          todayPnlNum: hasTodayPnl ? todayPnlNum : null,
+          isTodayUp: hasTodayPnl && todayPnlNum > 0,
+          isTodayDown: hasTodayPnl && todayPnlNum < 0,
+          pocket: "combined",
+          pocketLabel: labels.join("+") // 例如「錢袋1+錢袋2」，提示這一列是合併後的數字
+        });
+      });
+      // 權重改用「合併後清單」的市值總和重新計算，不能再沿用各錢袋自己的權重 (分母不一樣)
+      var totalValue = merged.reduce(function(s, x) { return s + (x.marketValueNum || 0); }, 0);
+      merged.forEach(function(s) {
+        s.weightNum = totalValue > 0 ? (s.marketValueNum / totalValue * 100) : 0;
+        s.weightText = s.weightNum.toFixed(1) + "%";
+      });
+      return merged;
+    }
+
     function renderStocks(data) {
       renderSortBar();
       var sl = document.getElementById("stock-list");
       var sHtml = "";
-      var sortedStocks = ((data && data.stocks) || []).slice().sort(function(a, b) {
+      var isMixedCombined = data && data.pocket === "combined" && groupMode === "mixed";
+      var baseStocks = isMixedCombined ? mergeStocksByCode_(data.stocks || []) : ((data && data.stocks) || []);
+      var sortedStocks = baseStocks.slice().sort(function(a, b) {
         var va = sortValue(a, sortKey), vb = sortValue(b, sortKey);
         var na = (va === null || va === undefined || isNaN(va)), nb = (vb === null || vb === undefined || isNaN(vb));
         if (na && nb) return 0;
