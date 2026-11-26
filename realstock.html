@@ -347,8 +347,9 @@
     .alert-row-name { color: #e2e8f0; }
     .alert-row-code { color: #64748b; }
     .alert-row-detail { color: #8e94a5; }
-    /* ★ 資產配置圖：預設撐滿剩餘可視高度 (實際高度由 renderTreemap_ 用 JS 依裝置視窗計算) ★ */
-    #alloc-treemap { min-height: 360px; }
+    /* ★ 資產配置圖：預設撐滿剩餘可視高度 (實際高度由 renderTreemap_ 用 JS 依裝置視窗計算)
+       底圖先試試米白色，讓方格之間露出的縫隙是米白色而不是卡片本身的深色/紙感底色 ★ */
+    #alloc-treemap { min-height: 360px; background: #f3ead9; border-radius: 10px; }
     #alloc-treemap svg { display: block; }
     /* ★ 資產配置圖點擊方格彈出的個股明細視窗 ★ */
     .td-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #1e2433; font-size: 13px; }
