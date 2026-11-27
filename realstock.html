@@ -325,6 +325,18 @@
     .chip-verify { color: #fca5a5; border-color: #7f1d1d; }
     .chip-tc { color: #c4b5fd; border-color: #4c1d95; }
     .chip-notc { color: #718096; border-style: dashed; }
+    .rk-chip { display: inline-block; margin-left: 5px; padding: 1px 6px; border-radius: 8px; font-size: 10px; font-weight: 700; border: 1px solid; white-space: nowrap; vertical-align: middle; }
+    .rk-c-disposed { background: #c2410c; border-color: #fb923c; color: #fff; }
+    .rk-c-high { background: rgba(217,119,6,0.18); border-color: #d97706; color: #fbbf24; }
+    .rk-c-watch { border-color: #475569; border-style: dashed; color: #94a3b8; }
+    .rk-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 700; color: #f1f5f9; }
+    .rk-sub { font-size: 10px; color: #8e94a5; font-weight: 500; }
+    .rk-item { border-left: 3px solid #475569; padding: 5px 8px; margin-top: 6px; background: #141721; border-radius: 6px; }
+    .rk-i-disposed { border-left-color: #fb923c; }
+    .rk-i-high { border-left-color: #d97706; }
+    .rk-reasons { font-size: 11px; color: #a0aec0; margin-top: 3px; line-height: 1.5; }
+    .rk-note { font-size: 10px; color: #8e94a5; margin-top: 6px; line-height: 1.4; }
+    .rk-ok { font-size: 12px; color: #8e94a5; }
     .intel-meta a { color: #60a5fa; text-decoration: none; }
     .intel-empty { color: #718096; font-size: 12px; text-align: center; padding: 30px 0; }
     .d-intel-badge { font-size: 10px; padding: 0 5px; border-radius: 8px; background: #1e293b; color: #93c5fd; margin-left: 4px; cursor: pointer; border: 1px solid #2e384d; }
@@ -487,6 +499,7 @@
 
   <!-- 持股頁籤 (極致密集、凸顯收益、可切換排序) -->
   <div id="tab-holdings" class="tab-content active">
+    <div id="risk-card" class="perf-chart-card" style="margin-bottom:10px;display:none"></div>
     <div id="alloc-treemap-card" class="perf-chart-card" style="margin-bottom:10px;display:none">
       <div class="today-chart-label">🗺️ 資產配置圖（面積＝成本，色階＝累積報酬率・對成本；點方格看明細）</div>
       <div id="alloc-treemap"></div>
@@ -897,7 +910,7 @@
           '<div class="d-row-main">' +
             '<div class="d-info-left">' +
               '<span class="d-stock-name">' + esc(s.name) + '</span>' +
-              '<span class="d-stock-code">' + esc(s.code) + '</span>' +
+              '<span class="d-stock-code">' + esc(s.code) + '</span>' + riskChip_(data, s.code) +
               (data && data.pocket === "combined" && s.pocketLabel ? '<span class="d-stock-code d-pocket-chip">' + esc(s.pocketLabel) + '</span>' : '') + iBadge +
             '</div>' +
             '<div class="d-pnl-right">' +
@@ -929,6 +942,49 @@
       applyGrouping_(data);
       renderTreemap_(data);
       renderAlerts_(data);
+      renderRisk_(data);
+    }
+
+    /* ★ 注意/處置風險提示：後端 (注意處置狀態) 已算好，網頁只負責顯示。data.alerts 為 null 代表功能尚未啟用，什麼都不顯示 ★ */
+    function riskInfo_(data, code) {
+      var a = data && data.alerts;
+      return (a && a.items && a.items[String(code)]) || null;
+    }
+    function riskChip_(data, code) {
+      var r = riskInfo_(data, code);
+      if (!r) return "";
+      var icon = r.level === "disposed" ? "⛔ " : (r.level === "high" ? "⚠️ " : "");
+      return '<span class="rk-chip rk-c-' + esc(r.level) + '">' + icon + esc(r.label) + '</span>';
+    }
+    function renderRisk_(data) {
+      var card = document.getElementById("risk-card");
+      if (!card) return;
+      var a = data && data.alerts;
+      if (!a) { card.style.display = "none"; card.innerHTML = ""; return; }
+      var order = { disposed: 0, high: 1, watch: 2 };
+      var codes = Object.keys(a.items || {}).sort(function(x, y) { return order[a.items[x].level] - order[a.items[y].level]; });
+      var sum = a.summary || {};
+      var parts = [];
+      if (sum.disposed) parts.push("處置 " + sum.disposed);
+      if (sum.high) parts.push("高風險 " + sum.high);
+      if (sum.watch) parts.push("近期被注意 " + sum.watch);
+      var h = '<div class="rk-head"><span>🚨 注意 / 處置風險</span><span class="rk-sub">資料日期 ' + esc(a.asOf || "") + '</span></div>';
+      if (!codes.length) {
+        h += '<div class="rk-ok" style="margin-top:4px">✅ 持股目前沒有被注意或處置</div>';
+      } else {
+        h += '<div class="rk-sub" style="margin-top:2px">' + esc(parts.join("　")) + '</div>';
+        codes.forEach(function(c) {
+          var r = a.items[c];
+          h += '<div class="rk-item rk-i-' + esc(r.level) + '">' +
+            '<div><b>' + esc(r.name || c) + '</b> <span class="d-stock-code">' + esc(c) + '</span>' + riskChip_(data, c) + '</div>' +
+            ((r.reasons && r.reasons.length) ? '<div class="rk-reasons">' + r.reasons.map(esc).join("<br>") + '</div>' : '') +
+          '</div>';
+        });
+      }
+      if (a.partial) h += '<div class="rk-note">※ 注意紀錄仍在累積中，連續/近10日/近30日天數可能偏低，請以官方預警與處置公告為準。</div>';
+      h += '<div class="rk-note">風險等級為依官方公告推估的提示，非官方判定，也不是投資建議。</div>';
+      card.innerHTML = h;
+      card.style.display = "block";
     }
 
     /* ★ 提案1：資產配置圖 (Treemap)，面積＝成本，色階＝累積報酬率(對成本) ★
@@ -1950,7 +2006,7 @@
       var rNum = parseFloat(String(p.realizedPnl || 0).replace(/,/g,"")) || 0;
       var rPnlClass = rNum > 0 ? "text-up" : (rNum < 0 ? "text-down" : "text-flat");
 
-      document.getElementById("port-summary").innerHTML = 
+      document.getElementById("port-summary").innerHTML =
         '<div class="port-header"><span>持股未結損益 (未實現)</span><span>' + esc(p.unrealizedRate || "0%") + '</span></div>' +
         '<div class="port-pnl ' + uPnlClass + '">' + esc(p.unrealizedPnl || "0") + '</div>' +
         '<div class="today-row"><span class="today-label">今日損益</span><span><span class="today-val ' + colorClass(p.isTodayProfit, p.isTodayLoss) + '">$' + esc(p.todayPnl || "0") + '</span>' +
