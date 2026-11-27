@@ -74,13 +74,14 @@
     }
     .dense-stock-card:active { background: #1a2030; }
     .d-row-main { display: flex; justify-content: space-between; align-items: center; }
-    .d-info-left { display: flex; align-items: baseline; gap: 7px; }
-    .d-stock-name { font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.2px; }
+    /* 名稱 + 代號 + 風險/錢袋標籤放不下時，標籤換到下一行，名稱與標籤文字不再被擠成直排 */
+    .d-info-left { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 7px; flex: 1 1 auto; min-width: 0; }
+    .d-stock-name { font-size: 16px; font-weight: 800; color: #ffffff; letter-spacing: -0.2px; white-space: nowrap; }
     .d-stock-code {
       font-size: 11px; font-weight: 600; color: #64748b; background: #0d1017;
-      padding: 1px 5px; border-radius: 4px;
+      padding: 1px 5px; border-radius: 4px; white-space: nowrap;
     }
-    .d-pnl-right { display: flex; align-items: center; gap: 7px; }
+    .d-pnl-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; margin-left: 6px; }
     .d-pnl-amount { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
     .d-pnl-badge {
       font-size: 13px; font-weight: 800; padding: 2px 7px; border-radius: 6px;
@@ -386,19 +387,19 @@
     body.theme-paper .btn-primary-action { color: #fffaf0; background: #7a5230; border-color: #7a5230; }
     body.theme-paper .d-pocket-chip { background: #e3d8b8; color: #6b5a38; }
     body.theme-paper .modal-box { background: #fffdf7; border-color: #e6dabd; }
-    body.theme-paper .modal-close, body.theme-paper .modal-hint { color: #8a7c5c; }
+    body.theme-paper .modal-close, body.theme-paper .modal-hint { color: #75684a; }
     body.theme-paper .modal-input { background: #fffaf0; color: #3a3328; border-color: #ddd0b0; }
     body.theme-paper .alert-row { border-color: #e6dabd; }
     body.theme-paper .alert-row-name { color: #2b2418; }
-    body.theme-paper .alert-row-code, body.theme-paper .alert-row-detail { color: #8a7c5c; }
+    body.theme-paper .alert-row-code, body.theme-paper .alert-row-detail { color: #75684a; }
     body.theme-paper .td-row { border-color: #e6dabd; }
-    body.theme-paper .td-row-label { color: #8a7c5c; }
+    body.theme-paper .td-row-label { color: #75684a; }
     body.theme-paper .td-row-value-default { color: #2b2418; }
     body.theme-paper .duo-item { background: rgba(122,82,48,0.08); }
-    body.theme-paper .port-sub-grid { color: #8a7c5c; border-color: #e6dabd; }
+    body.theme-paper .port-sub-grid { color: #75684a; border-color: #e6dabd; }
     body.theme-paper .port-sub-grid b { color: #2b2418; }
     body.theme-paper .nav-tabs { background: #efe6d1; border-color: #ddd0b0; }
-    body.theme-paper .tab-btn { color: #8a7c5c; }
+    body.theme-paper .tab-btn { color: #75684a; }
     body.theme-paper .tab-btn.active { background: #2b2418; color: #f7f1e3; box-shadow: 0 2px 6px rgba(43,36,24,0.25); }
     body.theme-paper .market-card,
     body.theme-paper .dense-stock-card,
@@ -414,7 +415,7 @@
     body.theme-paper .stats-hint, body.theme-paper .comp-count, body.theme-paper .today-label,
     body.theme-paper .perf-section-title, body.theme-paper .intel-sec-note, body.theme-paper .d-weight b,
     body.theme-paper .auto-badge, body.theme-paper .time-label, body.theme-paper .perf-table th {
-      color: #8a7c5c;
+      color: #75684a;
     }
     body.theme-paper .port-card {
       background: linear-gradient(135deg, #fffaf0 0%, #f1e6cc 100%);
@@ -425,16 +426,16 @@
       color: #2b2418;
       font-family: "Songti TC", "PMingLiU", "Noto Serif TC", Georgia, serif;
     }
-    body.theme-paper .d-stock-code, body.theme-paper .comp-code { background: #f1e6cc; color: #8a7c5c; }
+    body.theme-paper .d-stock-code, body.theme-paper .comp-code { background: #f1e6cc; color: #75684a; }
     body.theme-paper .sort-chip, body.theme-paper .range-chip, body.theme-paper .search-input,
     body.theme-paper .ctrl-btn, body.theme-paper .custom-date-row input {
-      background: #fffaf0; border-color: #ddd0b0; color: #8a7c5c;
+      background: #fffaf0; border-color: #ddd0b0; color: #75684a;
     }
     body.theme-paper .sort-chip.active, body.theme-paper .range-chip.active {
       background: #2b2418; color: #f7f1e3; border-color: #2b2418;
     }
     body.theme-paper .perf-table th, body.theme-paper .perf-table td { border-color: #e6dabd; color: #2b2418; }
-    body.theme-paper .perf-table th { color: #8a7c5c; }
+    body.theme-paper .perf-table th { color: #75684a; }
     body.theme-paper .comp-body { background: #f1e8d2; }
     body.theme-paper .d-weight-bar { background: #e6dabd; }
     body.theme-paper .d-weight-fill { background: #7a5230; }
@@ -447,9 +448,55 @@
     body.theme-paper .pnl-badge-light-up { background: rgba(161,64,47,0.10); color: #a1402f; border-color: rgba(161,64,47,0.4); }
     body.theme-paper .pnl-badge-deep-down { background: #3f6b4a; color: #fffaf0; border-color: #3f6b4a; box-shadow: none; }
     body.theme-paper .pnl-badge-light-down { background: rgba(63,107,74,0.10); color: #3f6b4a; border-color: rgba(63,107,74,0.4); }
-    body.theme-paper .pnl-badge-flat { background: rgba(138,124,92,0.12); color: #8a7c5c; border-color: rgba(138,124,92,0.3); }
+    body.theme-paper .pnl-badge-flat { background: rgba(138,124,92,0.12); color: #75684a; border-color: rgba(138,124,92,0.3); }
     body.theme-paper .limit-up-price { background: rgba(161,64,47,0.10); color: #a1402f; border-color: rgba(161,64,47,0.4); }
     body.theme-paper .limit-down-price { background: rgba(63,107,74,0.10); color: #3f6b4a; border-color: rgba(63,107,74,0.4); }
+
+    /* ---- 淺色風格補強：文字對比不足、仍為深色底的區塊 (持股列、財報動態、績效提示、每日情報、注意/處置風險) ---- */
+    body.theme-paper .duo-label, body.theme-paper .perf-tile-sub, body.theme-paper .intel-head,
+    body.theme-paper .perf-legend, body.theme-paper .custom-date-row, body.theme-paper .intel-sec-note,
+    body.theme-paper .text-flat, body.theme-paper .comp-arrow { color: #75684a; }
+    body.theme-paper .comp-card.expanded .comp-arrow { color: #7a5230; }
+    body.theme-paper .d-sub-item b { color: #2b2418; }
+    body.theme-paper .d-rt-price { color: #5a4a2c; }
+    body.theme-paper .auto-badge.on { color: #3f6b4a; }
+    body.theme-paper .act-buy { background: rgba(161,64,47,0.10); color: #a1402f; border-color: rgba(161,64,47,0.35); }
+    body.theme-paper .act-sell { background: rgba(63,107,74,0.10); color: #3f6b4a; border-color: rgba(63,107,74,0.35); }
+    body.theme-paper .act-hold { background: rgba(47,93,138,0.10); color: #2f5d8a; border-color: rgba(47,93,138,0.35); }
+    body.theme-paper .act-default { background: rgba(138,124,92,0.14); color: #5a4a2c; }
+    body.theme-paper .report-timeline::before { background: #ddd0b0; }
+    body.theme-paper .report-card { background: #fffaf0; border-color: #e6dabd; }
+    body.theme-paper .rep-date { color: #3a3328; }
+    body.theme-paper .rep-summary { color: #5a4a2c; }
+    body.theme-paper .rep-target-val { color: #8a5a00; background: rgba(217,119,6,0.14); }
+    body.theme-paper .rep-pos-val { color: #2f5d8a; background: rgba(47,93,138,0.10); }
+    body.theme-paper .rep-price-val { color: #5a4a2c; background: rgba(138,124,92,0.14); }
+    body.theme-paper .perf-tip { background: #fffdf7; border-color: #ddd0b0; color: #3a3328; box-shadow: 0 2px 8px rgba(90,70,30,0.15); }
+    body.theme-paper .perf-tip .tip-date { color: #75684a; }
+    body.theme-paper .intel-card.third { background: #fff4de; border-left-color: #d97706; }
+    body.theme-paper .intel-value, body.theme-paper .intel-sum, body.theme-paper .d-intel-item { color: #5a4a2c; }
+    body.theme-paper .intel-title .ic-code, body.theme-paper .ic-codes, body.theme-paper .intel-meta a,
+    body.theme-paper .d-intel-item a { color: #2f5d8a; }
+    body.theme-paper .chip { border-color: #ddd0b0; color: #75684a; }
+    body.theme-paper .chip-off { color: #3f6b4a; border-color: #9fbfa8; }
+    body.theme-paper .chip-third { color: #8a5a00; border-color: #d9b36a; }
+    body.theme-paper .chip-verify { color: #a1402f; border-color: #d9a398; }
+    body.theme-paper .chip-tc { color: #5b3fa0; border-color: #bfb0e0; }
+    body.theme-paper .d-intel-badge { background: #efe6d1; color: #2f5d8a; border-color: #ddd0b0; }
+    body.theme-paper .d-intel-badge.pod { color: #5b3fa0; }
+    body.theme-paper .btn-refresh:active { background: #efe6d1; }
+    body.theme-paper .dense-stock-card:active, body.theme-paper .comp-header:active { background: #f6efdc; }
+    /* 注意/處置風險 */
+    body.theme-paper .rk-head, body.theme-paper .intel-title { color: #2b2418; }
+    body.theme-paper .d-stock-code.d-pocket-chip { background: #e3d8b8; color: #5a4a2c; }
+    body.theme-paper .rk-caret, body.theme-paper .rk-sub, body.theme-paper .rk-note, body.theme-paper .rk-ok { color: #75684a; }
+    body.theme-paper .rk-item { background: #fffaf0; border-color: #ece1c4; border-left-color: #b8ab88; }
+    body.theme-paper .rk-i-disposed { border-left-color: #c2410c; }
+    body.theme-paper .rk-i-high { border-left-color: #d97706; }
+    body.theme-paper .rk-item b { color: #2b2418; }
+    body.theme-paper .rk-reasons { color: #5a4a2c; }
+    body.theme-paper .rk-c-high { background: rgba(217,119,6,0.12); border-color: #d97706; color: #8a4b00; }
+    body.theme-paper .rk-c-watch { border-color: #a89a78; color: #5a4a2c; }
   </style>
 </head>
 <body>
